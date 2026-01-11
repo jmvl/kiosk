@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "env": {
+    "VITE_CONVEX_URL": "@convex-url",
+    "VITE_KIOSK_ID": "@kiosk-id",
+    "VITE_LANGUAGE": "@language"
+  }
+}

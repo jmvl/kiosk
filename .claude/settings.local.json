@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.claude/hooks/play-tts.sh:*)",
+      "Skill(superpowers:brainstorm)",
+      "mcp__plugin_serena_serena__list_dir",
+      "mcp__plugin_serena_serena__activate_project",
+      "mcp__plugin_serena_serena__read_file",
+      "mcp__plugin_serena_serena__find_file",
+      "mcp__plugin_serena_serena__search_for_pattern",
+      "mcp__agentvibes__get_config",
+      "mcp__agentvibes__list_voices",
+      "mcp__agentvibes__set_voice",
+      "mcp__agentvibes__set_provider",
+      "mcp__agentvibes__download_extra_voices",
+      "Bash(.claude/hooks/piper-installer.sh)",
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(npx convex dev:*)",
+      "Bash(npx convex init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "sequential-thinking",
+    "mcp-atlassian",
+    "agentvibes"
+  ]
+}
