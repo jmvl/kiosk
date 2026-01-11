@@ -535,3 +535,214 @@ body {
   background-color: #fee2e2;
   color: #dc2626;
 }
+
+/* Ads Management Page */
+.ads-page {
+  min-height: 100vh;
+  background-color: #f5f6fa;
+}
+
+.ads-loading {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ads-header {
+  background: white;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.ads-header h1 {
+  font-size: 20px;
+  color: #2c3e50;
+}
+
+.ads-content {
+  padding: 24px;
+}
+
+/* Upload Section */
+.upload-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.upload-button {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.upload-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+}
+
+.upload-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.upload-progress {
+  margin-top: 16px;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transition: width 0.3s;
+}
+
+.upload-progress span {
+  position: absolute;
+  right: 0;
+  top: 12px;
+  font-size: 12px;
+  color: #7f8c8d;
+}
+
+.upload-error {
+  color: #dc2626;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.upload-help {
+  color: #95a5a6;
+  font-size: 12px;
+  margin-top: 12px;
+}
+
+/* Ads List Section */
+.ads-list-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.ads-list-section h2 {
+  font-size: 18px;
+  color: #2c3e50;
+  margin-bottom: 16px;
+}
+
+.no-ads {
+  text-align: center;
+  padding: 40px;
+  color: #7f8c8d;
+}
+
+.ads-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ads-table th,
+.ads-table td {
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.ads-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #7f8c8d;
+  border-bottom: 1px solid #eee;
+}
+
+.ads-table td {
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.ads-table tr:last-child td {
+  border-bottom: none;
+}
+
+.ads-table tr:hover td {
+  background-color: #f8f9fa;
+}
+
+.ad-title-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ad-title {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.ad-filename {
+  font-size: 12px;
+  color: #95a5a6;
+}
+
+.status-badge.processing {
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.ad-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-button {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-button.toggle {
+  background: transparent;
+  border: 1px solid #e0e0e0;
+  color: #7f8c8d;
+}
+
+.action-button.toggle:hover:not(:disabled) {
+  border-color: #667eea;
+  color: #667eea;
+}
+
+.action-button.toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-button.delete {
+  background: transparent;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.action-button.delete:hover {
+  background-color: #fee2e2;
+}

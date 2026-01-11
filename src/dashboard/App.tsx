@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { LoginPage } from './pages/LoginPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { ConfigurationPage } from './pages/ConfigurationPage';
+import { AdsManagementPage } from './pages/AdsManagementPage';
 
 interface User {
   email: string;
@@ -49,6 +50,8 @@ function App() {
   switch (currentPage) {
     case 'config':
       return <ConfigurationPage onBack={() => setCurrentPage('dashboard')} />;
+    case 'ads':
+      return <AdsManagementPage onBack={() => setCurrentPage('dashboard')} />;
     case 'dashboard':
     default:
       return (
