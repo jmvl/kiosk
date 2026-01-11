@@ -97,6 +97,12 @@ app.on('browser-window-focus', () => {
         //   return false;
         // }
       });
+
+      // Block context menu (right-click)
+      window.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        return false;
+      });
     `);
   }
 });
