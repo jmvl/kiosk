@@ -6,14 +6,32 @@ import { QuizScreen } from './components/QuizScreen';
 import { SlotMachineScreen } from './components/SlotMachineScreen';
 import { WinScreen } from './components/WinScreen';
 import { LossScreen } from './components/LossScreen';
+import { storageService } from './services/StorageService';
+import { syncService } from './services/SyncService';
 
 type GameState = 'idle' | 'coin-inserted' | 'quiz' | 'game' | 'win' | 'loss';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>('idle');
-  // coinValue stored for future use in prize calculation
-  const [_coinValue, setCoinValue] = useState<number>(0);
+  // coinValue stored for prize calculation and game result tracking
+  const [coinValue, setCoinValue] = useState<number>(0);
   const [lastInteraction, setLastInteraction] = useState<Date>(new Date());
+
+  // Start sync service on mount
+  useEffect(() => {
+    // Initialize storage first
+    storageService.init().catch((err) => {
+      console.error('[App] Failed to initialize storage:', err);
+    });
+
+    // Start background sync
+    syncService.start();
+
+    // Cleanup on unmount
+    return () => {
+      syncService.stop();
+    };
+  }, []);
 
   // Keyboard event handler for coin input
   useKeyboardEvents((key) => {
@@ -49,7 +67,20 @@ function App() {
       case 'game':
         return (
           <SlotMachineScreen
-            onComplete={(result) => setGameState(result === 'win' ? 'win' : 'loss')}
+            onComplete={(result) => {
+              // Save game result to IndexedDB
+              const kioskId = import.meta.env.VITE_KIOSK_ID || 'KIOSK-001';
+              storageService
+                .saveGameResult({
+                  kioskId,
+                  coinValue,
+                  outcome: result,
+                  prizeValue: result === 'win' ? coinValue * 2 : undefined,
+                })
+                .catch((err) => console.error('[App] Failed to save game result:', err));
+
+              setGameState(result === 'win' ? 'win' : 'loss');
+            }}
           />
         );
       case 'win':

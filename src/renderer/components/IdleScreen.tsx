@@ -1,5 +1,7 @@
 // Idle Screen - displays promotional videos and "Insert Coin" prompt
 import { useState, useRef, useEffect } from 'react';
+import { storageService } from '../services/StorageService';
+import { t } from '../services/LanguageService';
 
 // Sample video ads - will be loaded from Convex in production
 const SAMPLE_VIDEO_ADS = [
@@ -31,8 +33,20 @@ export function IdleScreen() {
 
   const currentAd = SAMPLE_VIDEO_ADS[currentAdIndex];
 
+  // Track ad start time for duration logging
+  const adStartTimeRef = useRef<number>(Date.now());
+
   // Rotate to next video when current one ends
   const handleVideoEnd = () => {
+    // Log the ad impression with actual duration
+    const duration = Math.floor((Date.now() - adStartTimeRef.current) / 1000);
+    storageService.logAdImpression(currentAd.id, duration).catch((err) => {
+      console.error('[IdleScreen] Failed to log ad impression:', err);
+    });
+
+    // Reset start time for next ad
+    adStartTimeRef.current = Date.now();
+
     setCurrentAdIndex((prev) => (prev + 1) % SAMPLE_VIDEO_ADS.length);
     setIsVideoLoaded(false);
   };
@@ -73,8 +87,8 @@ export function IdleScreen() {
         {!isVideoLoaded && (
           <div className="video-fallback">
             <div className="promo-text">
-              <h2>🛒 Special Offers!</h2>
-              <p>Play to win amazing prizes!</p>
+              <h2>{t('idle.specialOffers')}</h2>
+              <p>{t('idle.playToWin')}</p>
             </div>
           </div>
         )}
@@ -83,13 +97,13 @@ export function IdleScreen() {
       {/* Insert coin prompt overlay */}
       <div className="coin-prompt-overlay">
         <div className="coin-prompt">
-          <h1 className="insert-coin-text">Insert Coin to Play!</h1>
+          <h1 className="insert-coin-text">{t('idle.insertCoin')}</h1>
           <div className="coin-icons">
-            <span className="coin coin-1">€1</span>
-            <span className="coin coin-2">€2</span>
-            <span className="coin coin-5">€5</span>
+            <span className="coin coin-1">{t('coin.euro1')}</span>
+            <span className="coin coin-2">{t('coin.euro2')}</span>
+            <span className="coin coin-5">{t('coin.euro5')}</span>
           </div>
-          <p className="win-chance-text">Win prizes instantly!</p>
+          <p className="win-chance-text">{t('idle.winChance')}</p>
         </div>
       </div>
 
@@ -97,7 +111,7 @@ export function IdleScreen() {
       <div className="ad-info">
         <span className="ad-title">{currentAd.title}</span>
         <span className="ad-indicator">
-          Ad {currentAdIndex + 1} of {SAMPLE_VIDEO_ADS.length}
+          {t('idle.ad')} {currentAdIndex + 1} {t('idle.of')} {SAMPLE_VIDEO_ADS.length}
         </span>
       </div>
     </div>

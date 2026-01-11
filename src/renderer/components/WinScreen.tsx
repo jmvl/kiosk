@@ -1,6 +1,7 @@
 // Win Screen - celebration display after winning the slot machine
 import { useEffect, useState } from 'react';
 import { printerService } from '../services/PrinterService';
+import { t } from '../services/LanguageService';
 
 export interface WinScreenProps {
   onComplete: () => void;
@@ -76,13 +77,13 @@ export function WinScreen({ onComplete, prizeValue = 1 }: WinScreenProps) {
   const getPrintStatusMessage = () => {
     switch (printStatus) {
       case 'pending':
-        return 'Preparing your prize...';
+        return t('win.preparing');
       case 'printing':
-        return '🎫 Printing your prize ticket...';
+        return `🎫 ${t('win.printingTicket')}`;
       case 'success':
-        return '✅ Ticket printed! Take your prize!';
+        return `✅ ${t('win.ticketPrinted')}`;
       case 'error':
-        return '⚠️ Print error - please see staff';
+        return `⚠️ ${t('win.printError')}`;
     }
   };
 
@@ -109,11 +110,11 @@ export function WinScreen({ onComplete, prizeValue = 1 }: WinScreenProps) {
 
       {/* YOU WIN overlay */}
       <div className="win-overlay">
-        <h1 className="win-title">🎉 YOU WIN! 🎉</h1>
+        <h1 className="win-title">🎉 {t('win.youWon')} 🎉</h1>
         <div className="jackpot-animation">
-          <span className="jackpot-text">JACKPOT!</span>
+          <span className="jackpot-text">{t('win.jackpot')}</span>
         </div>
-        <p className="prize-value">Prize: €{prizeValue}</p>
+        <p className="prize-value">{t('win.prize')}: €{prizeValue}</p>
       </div>
 
       {/* Ticket printing message */}

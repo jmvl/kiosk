@@ -1,6 +1,7 @@
 // Quiz Screen - displays question with answer options
 import { useState, useMemo } from 'react';
 import { getRandomQuestion } from '../services/QuizService';
+import { languageService, t } from '../services/LanguageService';
 
 export interface QuizScreenProps {
   onComplete: (passed: boolean) => void;
@@ -13,8 +14,8 @@ export function QuizScreen({ onComplete }: QuizScreenProps) {
   // Get a random question when component mounts (useMemo ensures same question during re-renders)
   const question = useMemo(() => getRandomQuestion(), []);
 
-  // Default to French for MVP - will be configurable via KioskConfig
-  const language: 'fr' | 'nl' = 'fr';
+  // Use detected language from LanguageService
+  const language = languageService.getLanguage();
 
   const handleAnswerSelect = (answerIndex: number) => {
     if (hasAnswered) return; // Prevent changing answer
@@ -45,7 +46,7 @@ export function QuizScreen({ onComplete }: QuizScreenProps) {
 
   return (
     <div className="quiz-screen">
-      <h2 className="quiz-title">Quiz Time!</h2>
+      <h2 className="quiz-title">{t('quiz.title')}</h2>
       <div className="question-container">
         <p className="question-text">{question.question[language]}</p>
       </div>
@@ -64,9 +65,9 @@ export function QuizScreen({ onComplete }: QuizScreenProps) {
       {hasAnswered && (
         <div className="result-message">
           {selectedAnswer === question.correctAnswer ? (
-            <p className="correct-message">Correct! Proceeding to the game...</p>
+            <p className="correct-message">{t('quiz.correct')}</p>
           ) : (
-            <p className="incorrect-message">Wrong answer. Better luck next time!</p>
+            <p className="incorrect-message">{t('quiz.incorrect')}</p>
           )}
         </div>
       )}

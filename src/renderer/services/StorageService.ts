@@ -22,9 +22,25 @@ interface KioskDB {
     value: {
       id: string;
       timestamp: number;
+      kioskId: string;
+      coinValue: number;
       outcome: 'win' | 'loss';
       prizeValue?: number;
       synced: boolean;
+      syncStatus: 'pending' | 'synced' | 'failed';
+      retryCount: number;
+    };
+  };
+  adImpressions: {
+    key: string;
+    value: {
+      id: string;
+      adId: string;
+      timestamp: number;
+      duration: number;
+      synced: boolean;
+      syncStatus: 'pending' | 'synced' | 'failed';
+      retryCount: number;
     };
   };
   config: {
@@ -38,7 +54,7 @@ interface KioskDB {
 }
 
 const DB_NAME = 'kiosk-db';
-const DB_VERSION = 1;
+const DB_VERSION = 3; // Incremented for syncStatus and retryCount fields
 
 class StorageService {
   private db: IDBPDatabase<KioskDB> | null = null;
@@ -58,6 +74,10 @@ class StorageService {
         // Create game results store
         if (!db.objectStoreNames.contains('gameResults')) {
           db.createObjectStore('gameResults', { keyPath: 'id' });
+        }
+        // Create ad impressions store
+        if (!db.objectStoreNames.contains('adImpressions')) {
+          db.createObjectStore('adImpressions', { keyPath: 'id' });
         }
         // Create config store
         if (!db.objectStoreNames.contains('config')) {
@@ -109,6 +129,8 @@ class StorageService {
    * Save a game result
    */
   async saveGameResult(result: {
+    kioskId: string;
+    coinValue: number;
     outcome: 'win' | 'loss';
     prizeValue?: number;
   }): Promise<string> {
@@ -117,27 +139,35 @@ class StorageService {
     await this.db!.put('gameResults', {
       id,
       timestamp: Date.now(),
+      kioskId: result.kioskId,
+      coinValue: result.coinValue,
       outcome: result.outcome,
       prizeValue: result.prizeValue,
       synced: false,
+      syncStatus: 'pending',
+      retryCount: 0,
     });
     return id;
   }
 
   /**
-   * Get unsynced game results
+   * Get unsynced game results (pending or failed with retries left)
    */
   async getUnsyncedResults(): Promise<
     Array<{
       id: string;
       timestamp: number;
+      kioskId: string;
+      coinValue: number;
       outcome: 'win' | 'loss';
       prizeValue?: number;
+      retryCount: number;
     }>
   > {
     if (!this.db) await this.init();
     const all = await this.db!.getAll('gameResults');
-    return all.filter((r) => !r.synced);
+    // Return pending records and failed records with retries < 5
+    return all.filter((r) => r.syncStatus === 'pending' || (r.syncStatus === 'failed' && r.retryCount < 5));
   }
 
   /**
@@ -150,6 +180,94 @@ class StorageService {
       const record = await tx.store.get(id);
       if (record) {
         record.synced = true;
+        record.syncStatus = 'synced';
+        await tx.store.put(record);
+      }
+    }
+    await tx.done;
+  }
+
+  /**
+   * Mark results as failed (for retry)
+   */
+  async markResultsFailed(ids: string[]): Promise<void> {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction('gameResults', 'readwrite');
+    for (const id of ids) {
+      const record = await tx.store.get(id);
+      if (record) {
+        record.syncStatus = 'failed';
+        record.retryCount = (record.retryCount || 0) + 1;
+        await tx.store.put(record);
+      }
+    }
+    await tx.done;
+  }
+
+  /**
+   * Log an ad impression
+   */
+  async logAdImpression(adId: string, duration: number): Promise<string> {
+    if (!this.db) await this.init();
+    const id = crypto.randomUUID();
+    await this.db!.put('adImpressions', {
+      id,
+      adId,
+      timestamp: Date.now(),
+      duration,
+      synced: false,
+      syncStatus: 'pending',
+      retryCount: 0,
+    });
+    return id;
+  }
+
+  /**
+   * Get unsynced ad impressions (pending or failed with retries left)
+   */
+  async getUnsyncedImpressions(): Promise<
+    Array<{
+      id: string;
+      adId: string;
+      timestamp: number;
+      duration: number;
+      retryCount: number;
+    }>
+  > {
+    if (!this.db) await this.init();
+    const all = await this.db!.getAll('adImpressions');
+    // Return pending records and failed records with retries < 5
+    return all.filter((r) => r.syncStatus === 'pending' || (r.syncStatus === 'failed' && r.retryCount < 5));
+  }
+
+  /**
+   * Mark impressions as synced
+   */
+  async markImpressionsSynced(ids: string[]): Promise<void> {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction('adImpressions', 'readwrite');
+    for (const id of ids) {
+      const record = await tx.store.get(id);
+      if (record) {
+        record.synced = true;
+        record.syncStatus = 'synced';
+        await tx.store.put(record);
+      }
+    }
+    await tx.done;
+  }
+
+  /**
+   * Mark impressions as failed (for retry)
+   */
+  async markImpressionsFailed(ids: string[]): Promise<void> {
+    if (!this.db) await this.init();
+    const tx = this.db!.transaction('adImpressions', 'readwrite');
+    for (const id of ids) {
+      const record = await tx.store.get(id);
+      if (record) {
+        record.syncStatus = 'failed';
+        record.retryCount = (record.retryCount || 0) + 1;
         await tx.store.put(record);
       }
     }

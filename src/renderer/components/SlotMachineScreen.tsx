@@ -1,6 +1,7 @@
 // Slot Machine Screen - three reel slot game
 import { useState, useCallback, useRef } from 'react';
 import { WinEngine } from '../services/WinEngine';
+import { t } from '../services/LanguageService';
 
 export interface SlotMachineScreenProps {
   onComplete: (result: 'win' | 'loss') => void;
@@ -120,7 +121,7 @@ export function SlotMachineScreen({ onComplete }: SlotMachineScreenProps) {
 
   return (
     <div className="slot-machine-screen">
-      <h2 className="slot-title">Spin to Win!</h2>
+      <h2 className="slot-title">{t('slot.title')}</h2>
 
       <div className="slot-machine-container">
         <div className="reels-container">
@@ -155,20 +156,20 @@ export function SlotMachineScreen({ onComplete }: SlotMachineScreenProps) {
         onClick={startSpin}
         disabled={isAnySpinning || hasSpun}
       >
-        {isAnySpinning ? 'Spinning...' : hasSpun ? 'Done!' : 'PUSH'}
+        {isAnySpinning ? t('slot.spinning') : hasSpun ? t('slot.done') : t('slot.push')}
       </button>
 
       {result && (
         <div className={`result-display ${result}`}>
           {result === 'win' ? (
-            <p className="win-message">🎉 JACKPOT! 🎉</p>
+            <p className="win-message">{t('slot.jackpot')}</p>
           ) : (
-            <p className="loss-message">Better luck next time!</p>
+            <p className="loss-message">{t('slot.betterLuck')}</p>
           )}
         </div>
       )}
 
-      {!hasSpun && !isAnySpinning && <p className="instruction-text">Press the button to spin!</p>}
+      {!hasSpun && !isAnySpinning && <p className="instruction-text">{t('slot.pressButton')}</p>}
     </div>
   );
 }
