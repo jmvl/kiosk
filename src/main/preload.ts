@@ -8,7 +8,7 @@ import { contextBridge, ipcRenderer } from 'electron';
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
   // Keyboard event listener (for coin acceptor)
-  onKeyboardEvent: (callback: (event: { key: string }) => void) => {
+  onKeyboardEvent: (_callback: (event: { key: string }) => void) => {
     // Window will listen for keyboard events in renderer
     // This is a placeholder for hardware integration
   },

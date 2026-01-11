@@ -4,8 +4,8 @@ export interface LossScreenProps {
   onComplete: () => void;
 }
 
-export function LossScreen({ onComplete }: LossScreenProps) {
-  // TODO: Implement in Story 1.7
+export function LossScreen({ onComplete: _onComplete }: LossScreenProps) {
+  // TODO: Implement in Story 1.7, will use onComplete callback
   return (
     <div className="loss-screen">
       <h2>Better luck next time!</h2>

@@ -39,7 +39,7 @@ export function useSyncWorker() {
 
   // Helper to queue a game result
   const queueGameResult = async (result: GameResult) => {
-    const record: SyncRecord = {
+    const _record: SyncRecord = {
       id: crypto.randomUUID(),
       timestamp: Date.now(),
       type: 'game-result',
@@ -48,8 +48,8 @@ export function useSyncWorker() {
       data: result,
     };
 
-    // TODO: Store in IndexedDB
-    // await storeRecord(record);
+    // TODO: Store in IndexedDB in Story 3.1
+    // await storeRecord(_record);
   };
 
   return { syncStatus, pendingCount, queueGameResult };

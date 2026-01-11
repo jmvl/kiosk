@@ -43,7 +43,7 @@ export interface KioskConfig {
   language: 'fr' | 'nl';
 }
 
-export interface SyncStatus = 'pending' | 'synced' | 'failed';
+export type SyncStatus = 'pending' | 'synced' | 'failed';
 
 export interface SyncRecord {
   id: string;

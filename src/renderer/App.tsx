@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { useState, useEffect } from 'react';
 import { useKeyboardEvents } from './hooks/useKeyboardEvents';
 import { IdleScreen } from './components/IdleScreen';
@@ -10,7 +11,8 @@ type GameState = 'idle' | 'coin-inserted' | 'quiz' | 'game' | 'win' | 'loss';
 
 function App() {
   const [gameState, setGameState] = useState<GameState>('idle');
-  const [coinValue, setCoinValue] = useState<number>(0);
+  // coinValue stored for future use in prize calculation
+  const [_coinValue, setCoinValue] = useState<number>(0);
   const [lastInteraction, setLastInteraction] = useState<Date>(new Date());
 
   // Keyboard event handler for coin input

@@ -1,4 +1,4 @@
-import type { GameResult, SlotSymbol } from '@shared/types';
+import type { SlotSymbol } from '@shared/types';
 
 /**
  * Win Engine Service
@@ -17,7 +17,7 @@ export class WinEngine {
   /**
    * Determine if the player wins based on RNG and budget
    */
-  determineOutcome(symbols: SlotSymbol[]): 'win' | 'loss' {
+  determineOutcome(_symbols: SlotSymbol[]): 'win' | 'loss' {
     // Check budget first
     if (this.remainingBudget <= 0) {
       return 'loss'; // Budget exhausted
@@ -38,8 +38,8 @@ export class WinEngine {
   /**
    * Generate random slot machine symbols
    */
-  generateSymbols(count: number): SlotSymbol[] {
-    // TODO: Implement symbol generation
+  generateSymbols(_count: number): SlotSymbol[] {
+    // TODO: Implement symbol generation in Story 1.4
     return [];
   }
 
