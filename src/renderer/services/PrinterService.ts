@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import type { Prize } from '@shared/types';
 
 /**
@@ -8,6 +9,12 @@ import type { Prize } from '@shared/types';
 export class PrinterService {
   private connected = false;
   private isDevelopment = true; // Set to false in production
+  private kioskId: string;
+
+  constructor() {
+    // Get kiosk ID from environment variable
+    this.kioskId = import.meta.env.VITE_KIOSK_ID || 'unknown';
+  }
 
   /**
    * Initialize printer connection
@@ -35,8 +42,16 @@ export class PrinterService {
       id: prize.id,
       value: prize.value.toString(),
       expires: prize.expiresAt.toString(),
+      kiosk: this.kioskId, // Include kiosk ID for tracking
     });
     return `${baseUrl}?${params.toString()}`;
+  }
+
+  /**
+   * Get current kiosk ID
+   */
+  getKioskId(): string {
+    return this.kioskId;
   }
 
   /**
@@ -55,6 +70,7 @@ export class PrinterService {
         console.log('='.repeat(40));
         console.log('[PrinterService] TICKET PRINT SIMULATION');
         console.log('='.repeat(40));
+        console.log('Kiosk ID:', this.kioskId);
         console.log('Prize ID:', prize.id);
         console.log('Prize Value:', `€${prize.value}`);
         console.log('Prize Name (FR):', prize.name.fr);
@@ -88,7 +104,7 @@ export class PrinterService {
    */
   generatePrize(prizeValue: number): Prize {
     const now = Date.now();
-    const expiresIn = 7 * 24 * 60 * 60 * 1000; // 7 days
+    const expiresIn = 24 * 60 * 60 * 1000; // 24 hours expiration
 
     return {
       id: crypto.randomUUID(),
