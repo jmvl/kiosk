@@ -1,0 +1,536 @@
+<!--
+  Loyalty Arcade Kiosk - Project Specification
+  ============================================
+
+  Generated from brainstorming session (2025-01-10)
+  SCAMPER Method: Gamified Supermarket Kiosk Concept
+
+  This specification defines the "Loyalty Arcade" promotional kiosk
+  that transforms coin play into personalized loyalty experiences.
+-->
+
+<project_specification>
+  <project_name>Loyalty Arcade Kiosk</project_name>
+
+  <overview>
+    A casino-inspired promotional kiosk for supermarkets that transforms anonymous
+    coin play into engaging brand experiences. Shoppers insert a promotional token,
+    answer a quiz question, play a 30-second slot machine game, and win thermal
+    tickets with QR codes for same-day redemption. The system operates locally-first
+    for instant interaction (0ms latency) while syncing data to the cloud for analytics
+    and remote management. Revenue comes from three streams: ad sales (reel logo
+    placement + video ads), data monetization (anonymized play insights), and platform
+    fees (€250/month per kiosk to stores). Phase 0 MVP focuses on standalone coin-operated
+    gameplay with slot machine, quiz filter, and offline resilience.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>React 18.3 with Vite 6</framework>
+      <styling>CSS with slot machine animations</styling>
+      <state_management>React hooks and context (no Redux needed)</state_management>
+      <container>Electron 33 (Linux kiosk mode)</container>
+      <port>5173 (Vite dev server)</port>
+    </frontend>
+    <backend>
+      <runtime>Convex 1.17 (cloud backend for sync and config)</runtime>
+      <local_persistence>IndexedDB 8 (offline queue via idb library)</local_persistence>
+      <sync_engine>Custom sync worker (30-second intervals)</sync_engine>
+    </backend>
+    <communication>
+      <api>Convex React hooks for remote data</api>
+      <hardware>Direct keyboard events (Linux HID drivers for coin acceptor)</hardware>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 18+ installed
+      - npm package manager
+      - Convex account with project configured
+      - Convex URL: https://clear-salmon-146.convex.site
+      - Kiosk ID configuration (e.g., kiosk-001)
+      - Language setting: French (fr) or Dutch (nl)
+    </environment_setup>
+  </prerequisites>
+
+  <core_features>
+
+    <gameplay_core>
+      - Coin input detection via keyboard events ("1" = €1, "2" = €2, "5" = €5)
+      - Quiz filter question display (90% pass rate, cloud-fetched library)
+      - Multi-language quiz support (French + Dutch for Belgian market)
+      - Quiz answer validation with correct answer feedback
+      - Slot machine game with three-reel visual component
+      - Local RNG win determination (0ms latency, no server round-trip)
+      - Win/loss visual feedback (confetti animation for wins, minimal for losses)
+      - Daily budget cap enforcement (stops awarding when exhausted)
+      - Free-play-only model (no customer payment processing)
+    </gameplay_core>
+
+    <hardware_integration>
+      - Coin acceptor integration (Linux HID drivers, keyboard event mapping)
+      - Thermal printer integration (ESC/POS commands, node-escpos library)
+      - QR code generation for winning tickets
+      - Idle detection timer (30+ seconds of inactivity triggers ad mode)
+      - Tamper-resistant kiosk mode (Electron lockdown, no dev tools)
+    </hardware_integration>
+
+    <idle_screen_advertising>
+      - Promotional video playback on idle detection
+      - Video ad streaming from Convex-hosted URLs
+      - Browser-native caching for smooth playback
+      - Static fallback screen for network outages
+      - Ad impression tracking (timestamp, duration, queued for sync)
+      - Volume control for retail environments
+    </idle_screen_advertising>
+
+    <offline_resilience>
+      - IndexedDB offline queue for all game results and impressions
+      - Background sync worker (30-second periodic upload)
+      - Network-aware synchronization (skip gracefully when offline)
+      - Conflict resolution with exponential backoff for failed uploads
+      - Zero network downtime impact on gameplay
+      - Kiosk as source of truth for inventory (prevents overselling)
+    </offline_resilience>
+
+    <admin_dashboard>
+      - Real-time kiosk status monitoring (online/offline, last sync, games played)
+      - Win rate configuration (remote percentage adjustment)
+      - Daily budget cap configuration per kiosk
+      - Video ad upload and management (Convex storage)
+      - Ad campaign scheduling and targeting (start/end dates, location-based)
+      - Real-time analytics dashboard (total plays, win rate, prizes distributed, impressions)
+      - Remote kiosk configuration updates (auto-apply on sync cycle)
+      - Role-Based Access Control (4 tiers: Chain HQ, Regional Manager, Store Owner, Brand Advertiser)
+    </admin_dashboard>
+
+    <multi_language_support>
+      - Browser language detection (fr-BE, nl-BE, fr, nl codes)
+      - Quiz localization (questions and answers in both languages)
+      - UI string localization (buttons, labels, instructions, feedback)
+      - Language dictionary for French and Dutch
+      - Admin-configurable default language per kiosk
+    </multi_language_support>
+
+    <ticket_generation>
+      - Unique QR code generation for winning tickets
+      - Ticket format: QR code, prize value, expiration (24 hours), kiosk ID
+      - "Surprise" ticket format (prize revealed when printed, not on screen)
+      - Print failure handling with user notification
+      - Local inventory decrement on successful print
+    </ticket_generation>
+
+  </core_features>
+
+  <database_schema>
+    <convex_collections>
+      <kiosks>
+        - id (PRIMARY KEY)
+        - name (string)
+        - location (string)
+        - status (enum: online, offline, error)
+        - lastSeen (number - timestamp)
+        - config (object: winRate, dailyBudget, language)
+        - indexes: status, location
+      </kiosks>
+
+      <gameResults>
+        - id (PRIMARY KEY)
+        - kioskId (string)
+        - timestamp (number)
+        - coinValue (number)
+        - quizPassed (boolean)
+        - outcome (enum: win, loss)
+        - prizeValue (optional number)
+        - qrCode (optional string)
+        - syncStatus (enum: pending, synced, failed)
+        - indexes: kioskId, timestamp
+      </gameResults>
+
+      <adImpressions>
+        - id (PRIMARY KEY)
+        - kioskId (string)
+        - adId (string)
+        - timestamp (number)
+        - duration (number)
+        - syncStatus (enum: pending, synced, failed)
+        - indexes: kioskId, adId
+      </adImpressions>
+
+      <quizQuestions>
+        - id (PRIMARY KEY)
+        - question (object: fr, nl)
+        - answers (object: fr array, nl array)
+        - correctAnswer (number)
+        - active (boolean)
+      </quizQuestions>
+
+      <adminUsers>
+        - id (PRIMARY KEY)
+        - email (string, UNIQUE)
+        - role (enum: chain_hq, regional_manager, store_owner, brand_advertiser)
+        - name (string)
+        - active (boolean)
+        - indexes: email
+      </adminUsers>
+
+      <adCampaigns>
+        - id (PRIMARY KEY)
+        - name (string)
+        - videoUrl (string)
+        - startDate (number)
+        - endDate (number)
+        - targetKiosks (array of kiosk IDs)
+        - createdBy (string - admin user email)
+        - active (boolean)
+        - indexes: active, startDate
+      </adCampaigns>
+
+      <inventory>
+        - id (PRIMARY KEY)
+        - kioskId (string)
+        - date (string - YYYY-MM-DD format)
+        - initialBudget (number)
+        - remainingBudget (number)
+        - lastUpdated (number)
+        - indexes: kioskId + date (composite)
+      </inventory>
+    </convex_collections>
+
+    <indexeddb_stores>
+      <offlineQueue>
+        - Records with sync status (pending, synced, failed)
+        - Timestamp for retry logic
+        - Type field (game-result, ad-impression, health-check)
+        - Data payload (JSON serialized)
+      </offlineQueue>
+
+      <localInventory>
+        - Daily budget tracking as source of truth
+        - Remaining prize count
+        - Last sync timestamp
+      </localInventory>
+    </indexeddb_stores>
+  </database_schema>
+
+  <api_endpoints_summary>
+    <convex_queries>
+      - getKioskConfig(kioskId: string) - Fetch kiosk configuration
+      - getQuizQuestions() - Fetch active quiz library
+      - getAdCampaigns(kioskId: string) - Fetch scheduled ads for kiosk
+      - getKioskStatus() - Fetch real-time status for dashboard
+      - getAnalytics(filters) - Fetch game and ad analytics
+    </convex_queries>
+
+    <convex_mutations>
+      - recordGameResult(kioskId, outcome, coinValue, quizPassed) - Log game session
+      - updateInventory(kioskId, date, budgetChange) - Adjust prize count
+      - recordAdImpression(kioskId, adId, duration) - Log ad view
+      - updateKioskConfig(kioskId, config) - Remote configuration
+      - uploadAdCampaign(campaignData) - Create new ad campaign
+    </convex_mutations>
+
+    <admin_endpoints>
+      - GET /api/admin/kiosks - List all kiosks with status
+      - PUT /api/admin/kiosks/:id/config - Update kiosk settings
+      - POST /api/admin/campaigns - Create ad campaign
+      - GET /api/admin/analytics - Fetch analytics data
+      - POST /api/admin/users - Create admin user
+    </admin_endpoints>
+  </api_endpoints_summary>
+
+  <ui_layout>
+    <kiosk_orientation>
+      - Vertical screen orientation (Linux drivers configured)
+      - Fixed 1920x1080 resolution
+      - Full-screen kiosk mode (no window chrome)
+      - Touch-friendly button sizes
+    </kiosk_orientation>
+
+    <main_structure>
+      - Status bar (top): Kiosk ID, game state
+      - Idle screen: Full-screen video player with brand overlay
+      - Quiz screen: Question display, answer buttons, instructions
+      - Game screen: Three-reel slot machine, Push button, spin animation
+      - Result screen: Win celebration or loss message, print notification
+    </main_structure>
+
+    <idle_screen>
+      - Promotional video playback (full screen)
+      - "Insert coin to play" overlay
+      - Brand logo watermark
+      - Static fallback for network issues
+    </idle_screen>
+
+    <quiz_screen>
+      - Question text (large, centered)
+      - Multiple choice answer buttons (grid layout)
+      - Progress indicator (optional)
+      - Language toggle (if admin-enabled)
+    </quiz_screen>
+
+    <slot_machine_screen>
+      - Three reels with overflow:hidden masking
+      - Product logo and coupon icon symbols
+      - Gold/glossy aesthetic matching brand
+      - Push button/lever with hover/active/disabled states
+      - Coin value display
+    </slot_machine_screen>
+
+    <result_screens>
+      - Win: Confetti animation, "YOU WIN!" overlay, QR code reveal
+      - Loss: Minimal animation, reels stop, "Try again" message
+      - Print status indicator
+      - Auto-return to idle after 3-5 seconds
+    </result_screens>
+
+    <modals_overlays>
+      - Print failure notification (retry instructions)
+      - Low paper warning (for admin/maintenance)
+      - Network status indicator (subtle, non-intrusive)
+    </modals_overlays>
+  </ui_layout>
+
+  <design_system>
+    <color_palette>
+      - Primary: Gold (#D4AF37) - casino luxury aesthetic
+      - Secondary: Green (#10B981) - win celebration
+      - Accent: Red (#EF4444) - loss/attention
+      - Background: #1A1A1A (dark mode default)
+      - Surface: #2A2A2A (card/reel backgrounds)
+      - Text: #E5E5E5 (primary), #A0A0A0 (secondary)
+      - Border: #404040 (subtle separation)
+      - Success: #10B981 (confetti, win text)
+      - Warning: #F59E0B (budget low)
+      - Error: #EF4444 (print failures)
+    </color_palette>
+
+    <typography>
+      - Font family: system-ui, -apple-system, sans-serif (fast load)
+      - Headings: font-bold, uppercase (casino style)
+      - Body: font-normal, readable at distance
+      - Button text: font-semibold, large touch targets
+      - Numbers: tabular-nums (aligned digit display)
+    </typography>
+
+    <components>
+      <buttons>
+        - Push button: Gradient gold background, rounded, shadow depth
+        - Hover state: Brighten gradient, scale up slightly
+        - Active state: Push-in animation (translateY)
+        - Disabled: Grayed out, no hover effects
+        - Answer buttons: Large tiles with hover border
+      </buttons>
+
+      <reels>
+        - Container: Rounded corners, overflow hidden, subtle border
+        - Background: Dark gradient, glossy overlay effect
+        - Symbols: SVG icons (product logos, coupon icons)
+        - Animation: Smooth blur during spin, deceleration before stop
+      </reels>
+
+      <cards>
+        - Subtle gradient background
+        - Rounded corners (12px)
+        - Shadow for depth
+      </cards>
+    </components>
+
+    <animations>
+      - Spin animation: 3-4 seconds total, CSS transforms
+      - Reel stop: Sequential left-to-right (dramatic effect)
+      - Win celebration: Confetti particles, flashing lights
+      - Button press: 150ms ease-out transition
+      - Screen transitions: Fade in/out (300ms)
+      - Loading: Simple spinner or skeleton
+    </animations>
+  </design_system>
+
+  <key_interactions>
+    <coin_to_game_flow>
+      1. Kiosk displays idle screen with promotional video
+      2. Shopper inserts promotional coin (keyboard event "1", "2", or "5")
+      3. Game state transitions to "quiz" screen
+      4. Quiz question displays in detected language
+      5. Shopper selects answer from multiple choice
+      6. System validates answer (90% pass rate)
+         - Correct: Unlock slot machine game
+         - Incorrect: Show correct answer, return to idle after 3 seconds
+      7. Slot machine screen displays with coin value shown
+      8. Shopper presses Push button
+      9. Reels spin for 3-4 seconds with smooth animation
+      10. Reels stop sequentially left-to-right
+      11. Local RNG determines outcome (win rate enforced, budget checked)
+      12. Win: Confetti animation, thermal printer activates, QR code prints
+      13. Loss: Minimal animation, "Try again" message
+      14. Return to idle screen after 3-5 seconds
+    </coin_to_game_flow>
+
+    <idle_to_ad_flow>
+      1. No user interaction for 30+ seconds
+      2. System transitions to "idle" state
+      3. Promotional video begins playback from Convex URL
+      4. Video uses browser-native caching for smooth playback
+      5. Impression tracking logged locally
+      6. Any user interaction (coin, touch) interrupts playback
+      7. Immediate transition to game flow
+    </idle_to_ad_flow>
+
+    <admin_configuration_flow>
+      1. Admin logs into web dashboard (RBAC enforced)
+      2. Views kiosk status monitoring screen
+      3. Selects kiosk to configure
+      4. Adjusts win rate percentage (e.g., 20%)
+      5. Sets daily budget cap (e.g., 50 prizes per day)
+      6. Uploads new promotional video
+      7. Schedules ad campaign (start/end dates, target kiosks)
+      8. Changes saved to Convex
+      9. Kiosk detects configuration on next 30-second sync cycle
+      10. New settings applied immediately
+    </admin_configuration_flow>
+
+    <ticket_redemption_flow>
+      1. Winner receives thermal ticket with QR code
+      2. Prize revealed on ticket (surprise format)
+      3. Ticket shows expiration time (24 hours)
+      4. Shopper proceeds to checkout
+      5. Cashier scans QR code OR shopper uses self-scan checkout
+      6. System validates ticket (not expired, not already used)
+      7. Prize discount applied to purchase
+      8. Ticket marked as redeemed in system
+    </ticket_redemption_flow>
+  </key_interactions>
+
+  <implementation_steps>
+    <step number="1">
+      <title>Epic 1: Core Gameplay Experience (9 stories)</title>
+      <tasks>
+        - Story 1.1: Keyboard event handler for coin input detection
+        - Story 1.2: Quiz filter display with multi-language support
+        - Story 1.3: Quiz answer validation (90% pass rate)
+        - Story 1.4: Slot machine visual component (three reels, gold aesthetic)
+        - Story 1.5: Slot machine spin animation (3-4 seconds, sequential stop)
+        - Story 1.6: Win/loss outcome determination (local RNG, budget check)
+        - Story 1.7: Win/loss visual feedback (confetti vs minimal)
+        - Story 1.8: Thermal ticket printing with QR code
+        - Story 1.9: Free-play enforcement (no payment processing)
+      </tasks>
+    </step>
+
+    <step number="2">
+      <title>Epic 2: Idle Screen Advertising (4 stories)</title>
+      <tasks>
+        - Story 2.1: Idle detection timer (30+ seconds)
+        - Story 2.2: Video advertisement playback (Convex URLs)
+        - Story 2.3: Static fallback screen (network resilience)
+        - Story 2.4: Ad impression tracking (queued for sync)
+      </tasks>
+    </step>
+
+    <step number="3">
+      <title>Epic 3: Cloud Synchronization (4 stories)</title>
+      <tasks>
+        - Story 3.1: IndexedDB offline queue implementation
+        - Story 3.2: Sync worker implementation (30-second intervals)
+        - Story 3.3: Network-aware synchronization
+        - Story 3.4: Conflict resolution and error handling
+      </tasks>
+    </step>
+
+    <step number="4">
+      <title>Epic 4: Admin Dashboard (7 stories)</title>
+      <tasks>
+        - Story 4.1: Kiosk status monitoring dashboard
+        - Story 4.2: Win rate configuration
+        - Story 4.3: Daily budget cap configuration
+        - Story 4.4: Video ad upload and management
+        - Story 4.5: Ad campaign scheduling and targeting
+        - Story 4.6: Real-time analytics dashboard
+        - Story 4.7: Remote kiosk configuration updates
+      </tasks>
+    </step>
+
+    <step number="5">
+      <title>Epic 5: Role-Based Access Control (3 stories)</title>
+      <tasks>
+        - Story 5.1: Role definition and permission schema (4 tiers)
+        - Story 5.2: Admin user authentication and role assignment
+        - Story 5.3: UI permission enforcement
+      </tasks>
+    </step>
+
+    <step number="6">
+      <title>Epic 6: Multi-Language Support (4 stories)</title>
+      <tasks>
+        - Story 6.1: Browser language detection (fr-BE, nl-BE)
+        - Story 6.2: Quiz localization (questions + answers)
+        - Story 6.3: UI string localization (all interface text)
+        - Story 6.4: Admin language configuration per kiosk
+      </tasks>
+    </step>
+  </implementation_steps>
+
+  <success_criteria>
+    <functionality>
+      - All 31 stories across 6 epics implemented
+      - Coin input triggers quiz → game → print flow correctly
+      - Quiz achieves 90% pass rate with trivial questions
+      - Slot machine animation completes in 3-4 seconds
+      - Local RNG determines outcomes with 0ms latency
+      - Thermal printer generates valid QR codes
+      - Kiosk operates during total network outage
+      - Sync worker uploads queued data when network available
+      - Admin dashboard manages 100+ kiosks remotely
+      - RBAC enforces 4-tier access control
+      - French and Dutch languages supported throughout
+    </functionality>
+
+    <user_experience>
+      - Complete game flow (coin → quiz → game → print) in 30-45 seconds
+      - Intuitive coin input detection
+      - Clear quiz instructions and feedback
+      - Exciting slot machine visual experience
+      - Unambiguous win/loss communication
+      - Smooth idle screen video playback
+      - Fast admin dashboard load times
+      - Responsive design for kiosk vertical orientation
+      - Accessible via standard keyboard during development
+    </user_experience>
+
+    <technical_quality>
+      - Local-first architecture (0ms gameplay latency)
+      - Clean React component structure
+      - TypeScript strict typing throughout
+      - Proper error handling and logging
+      - Electron kiosk mode security lockdown
+      - IndexedDB queue never loses data
+      - Convex sync reliable with conflict resolution
+      - Thermal printer handles failures gracefully
+      - Code follows BMAD framework patterns
+    </technical_quality>
+
+    <business_metrics>
+      - Uptime: 99%+ target
+      - Network downtime impact: Zero (offline resilience)
+      - Redemption rate tracked (ticket → purchase)
+      - Ad impressions logged and reportable
+      - Plays per day per kiosk monitored
+      - Daily budget cap enforced (prevents overselling)
+      - Platform fee collection: €250/month per kiosk
+      - Ad sales: 9 reel slots × video campaigns
+      - Data monetization: Anonymized insights sold to brands
+    </business_metrics>
+
+    <design_polish>
+      - Gold/glossy casino aesthetic
+      - Smooth spin animations with sequential stops
+      - Confetti celebration for wins
+      - Brand consistency across all screens
+      - Professional admin dashboard UI
+      - Clear visual feedback for all interactions
+      - No layout overflow or clipping
+      - Polished button hover/active states
+    </design_polish>
+  </success_criteria>
+</project_specification>

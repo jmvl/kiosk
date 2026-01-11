@@ -40,3 +40,9 @@ convex/_generated/
 
 # BMAD output (gitignored by default in project)
 _bmad-output/
+
+# Agent files
+.agent.lock
+.claude_settings.json
+features.db
+claude-progress.txt
