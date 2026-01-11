@@ -3,18 +3,40 @@ import type { Prize } from '@shared/types';
 /**
  * Printer Service
  * Handles thermal printer communication via ESC/POS
+ * In development mode, logs to console instead of printing
  */
 export class PrinterService {
   private connected = false;
+  private isDevelopment = true; // Set to false in production
 
   /**
    * Initialize printer connection
    */
   async connect(): Promise<boolean> {
+    if (this.isDevelopment) {
+      console.log('[PrinterService] Development mode - printer simulated');
+      this.connected = true;
+      return true;
+    }
+
     // TODO: Implement printer connection in Story 1.8
-    // Using node-escpos library
+    // Using node-escpos library for production
     this.connected = true;
     return true;
+  }
+
+  /**
+   * Generate a QR code URL for the prize
+   */
+  generateQRCodeData(prize: Prize): string {
+    // Generate redemption URL with prize info
+    const baseUrl = 'https://kiosk.example.com/redeem';
+    const params = new URLSearchParams({
+      id: prize.id,
+      value: prize.value.toString(),
+      expires: prize.expiresAt.toString(),
+    });
+    return `${baseUrl}?${params.toString()}`;
   }
 
   /**
@@ -22,25 +44,62 @@ export class PrinterService {
    */
   async printTicket(prize: Prize): Promise<boolean> {
     if (!this.connected) {
-      throw new Error('Printer not connected');
+      await this.connect();
     }
 
     try {
-      // TODO: Implement ESC/POS printing
-      // 1. Generate QR code
-      // 2. Format ticket with:
-      //    - QR code
-      //    - Prize value
-      //    - Expiration time
-      //    - Kiosk ID
-      // 3. Send to printer via node-escpos
+      const qrData = this.generateQRCodeData(prize);
 
-      console.log('Printing ticket:', prize);
+      if (this.isDevelopment) {
+        // Development mode: log ticket details to console
+        console.log('='.repeat(40));
+        console.log('[PrinterService] TICKET PRINT SIMULATION');
+        console.log('='.repeat(40));
+        console.log('Prize ID:', prize.id);
+        console.log('Prize Value:', `€${prize.value}`);
+        console.log('Prize Name (FR):', prize.name.fr);
+        console.log('Prize Name (NL):', prize.name.nl);
+        console.log('Expires:', new Date(prize.expiresAt).toLocaleString());
+        console.log('QR Code Data:', qrData);
+        console.log('='.repeat(40));
+        return true;
+      }
+
+      // Production: Send ESC/POS commands to printer
+      // TODO: Implement ESC/POS printing
+      // 1. Initialize printer
+      // 2. Print header with store logo
+      // 3. Print "WINNER!" banner
+      // 4. Print QR code
+      // 5. Print prize value
+      // 6. Print expiration
+      // 7. Print kiosk ID
+      // 8. Cut paper
+
       return true;
     } catch (error) {
-      console.error('Print failed:', error);
+      console.error('[PrinterService] Print failed:', error);
       return false;
     }
+  }
+
+  /**
+   * Generate a new prize for a winner
+   */
+  generatePrize(prizeValue: number): Prize {
+    const now = Date.now();
+    const expiresIn = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    return {
+      id: crypto.randomUUID(),
+      name: {
+        fr: `Bon de réduction ${prizeValue}€`,
+        nl: `Waardebon ${prizeValue}€`,
+      },
+      value: prizeValue,
+      expiresAt: now + expiresIn,
+      qrCode: '', // Will be generated during print
+    };
   }
 
   /**
@@ -53,4 +112,15 @@ export class PrinterService {
       error: null,
     };
   }
+
+  /**
+   * Test printer by printing a test page
+   */
+  async printTestPage(): Promise<boolean> {
+    const testPrize = this.generatePrize(1);
+    return this.printTicket(testPrize);
+  }
 }
+
+// Singleton instance
+export const printerService = new PrinterService();
