@@ -47,17 +47,8 @@ export function DashboardPage({ user }: DashboardPageProps) {
       // Simulate loading
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // Mock data for MVP
-      setStats({
-        totalKiosks: 5,
-        onlineKiosks: 4,
-        totalPlaysToday: 156,
-        totalWinsToday: 47,
-        winRate: 30.1,
-        totalRevenue: 312,
-      });
-
-      setKiosks([
+      // Mock kiosk data for MVP
+      const mockKiosks: KioskStatus[] = [
         {
           id: 'KIOSK-001',
           name: 'Main Entrance',
@@ -103,7 +94,22 @@ export function DashboardPage({ user }: DashboardPageProps) {
           todayPlays: 0,
           todayWins: 0,
         },
-      ]);
+      ];
+
+      // Calculate stats from kiosk data to ensure counts match
+      const onlineCount = mockKiosks.filter((k) => k.status === 'online').length;
+      const totalPlays = mockKiosks.reduce((sum, k) => sum + k.todayPlays, 0);
+      const totalWins = mockKiosks.reduce((sum, k) => sum + k.todayWins, 0);
+
+      setKiosks(mockKiosks);
+      setStats({
+        totalKiosks: mockKiosks.length,
+        onlineKiosks: onlineCount,
+        totalPlaysToday: totalPlays,
+        totalWinsToday: totalWins,
+        winRate: totalPlays > 0 ? (totalWins / totalPlays) * 100 : 0,
+        totalRevenue: totalPlays * 2, // €2 per play
+      });
 
       setIsLoading(false);
     };
