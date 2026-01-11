@@ -28,6 +28,7 @@ export function UsersPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -96,6 +97,22 @@ export function UsersPage() {
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
+
+  const handleEdit = (user: AdminUser) => {
+    setEditingUser({ ...user });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingUser) return;
+    setUsers((prev) =>
+      prev.map((u) => (u.id === editingUser.id ? editingUser : u))
+    );
+    setEditingUser(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+  };
 
   if (isLoading) {
     return (
@@ -166,13 +183,95 @@ export function UsersPage() {
                 <td>{user.createdAt.toLocaleDateString()}</td>
                 <td>{user.lastLogin?.toLocaleDateString() || 'Never'}</td>
                 <td>
-                  <button className="action-button small">Edit</button>
+                  <button
+                    className="action-button small"
+                    onClick={() => handleEdit(user)}
+                    data-testid={`edit-user-${user.id}`}
+                  >
+                    Edit
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Edit Modal */}
+      {editingUser && (
+        <div className="modal-overlay" data-testid="edit-modal">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Edit User</h2>
+              <button className="close-button" onClick={handleCancelEdit}>×</button>
+            </div>
+            <div className="modal-content">
+              <div className="form-group">
+                <label>User ID</label>
+                <input type="text" value={editingUser.id} disabled />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    value={editingUser.name}
+                    onChange={(e) =>
+                      setEditingUser({ ...editingUser, name: e.target.value })
+                    }
+                    data-testid="edit-user-name"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={editingUser.email}
+                    onChange={(e) =>
+                      setEditingUser({ ...editingUser, email: e.target.value })
+                    }
+                    data-testid="edit-user-email"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Role</label>
+                  <select
+                    value={editingUser.role}
+                    onChange={(e) =>
+                      setEditingUser({ ...editingUser, role: e.target.value as UserRole })
+                    }
+                    data-testid="edit-user-role"
+                  >
+                    <option value="chain_hq">Chain HQ Admin</option>
+                    <option value="regional_manager">Regional Manager</option>
+                    <option value="store_owner">Store Owner</option>
+                    <option value="brand_advertiser">Brand Advertiser</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={editingUser.active ? 'active' : 'inactive'}
+                    onChange={(e) =>
+                      setEditingUser({ ...editingUser, active: e.target.value === 'active' })
+                    }
+                    data-testid="edit-user-status"
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-button" onClick={handleCancelEdit}>Cancel</button>
+              <button className="primary-button" onClick={handleSaveEdit} data-testid="save-edit">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { ConfigurationPage } from './pages/ConfigurationPage';
 import { AdsManagementPage } from './pages/AdsManagementPage';
 import { Sidebar, UserRole } from './components/Sidebar';
 import { KiosksPage } from './pages/KiosksPage';
+import { KioskDetailPage } from './pages/KioskDetailPage';
 import { CampaignsPage } from './pages/CampaignsPage';
 import { AnalyticsPage } from './pages/AnalyticsPage';
 import { UsersPage } from './pages/UsersPage';
@@ -18,23 +19,35 @@ export interface User {
   role: UserRole;
 }
 
-export type Page = 'dashboard' | 'kiosks' | 'campaigns' | 'analytics' | 'users' | 'config' | 'questions' | 'ads';
+export type Page = 'dashboard' | 'kiosks' | 'kiosk-detail' | 'campaigns' | 'analytics' | 'users' | 'config' | 'questions' | 'ads';
 
-// Helper to get page from URL hash
-const getPageFromHash = (): Page => {
+// Parse hash to get page and optional ID
+interface ParsedHash {
+  page: Page;
+  id?: string;
+}
+
+const parseHash = (): ParsedHash => {
   const hash = window.location.hash.replace('#', '');
-  const validPages: Page[] = ['dashboard', 'kiosks', 'campaigns', 'analytics', 'users', 'config', 'questions', 'ads'];
-  return validPages.includes(hash as Page) ? (hash as Page) : 'dashboard';
+  const [page, id] = hash.split('/');
+  const validPages: Page[] = ['dashboard', 'kiosks', 'kiosk-detail', 'campaigns', 'analytics', 'users', 'config', 'questions', 'ads'];
+  return {
+    page: validPages.includes(page as Page) ? (page as Page) : 'dashboard',
+    id,
+  };
 };
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
-  const [currentPage, setCurrentPage] = useState<Page>(getPageFromHash);
+  const [currentPage, setCurrentPage] = useState<Page>(() => parseHash().page);
+  const [selectedKioskId, setSelectedKioskId] = useState<string | undefined>(() => parseHash().id);
 
   // Handle browser back/forward navigation
   useEffect(() => {
     const handlePopState = () => {
-      setCurrentPage(getPageFromHash());
+      const { page, id } = parseHash();
+      setCurrentPage(page);
+      setSelectedKioskId(id);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -71,16 +84,23 @@ function App() {
   const handleLogout = () => {
     setUser(null);
     setCurrentPage('dashboard');
+    setSelectedKioskId(undefined);
     // Clear hash on logout
     window.history.replaceState(null, '', window.location.pathname);
   };
 
-  const handleNavigate = useCallback((page: string) => {
+  const handleNavigate = useCallback((page: string, id?: string) => {
     const newPage = page as Page;
     setCurrentPage(newPage);
+    setSelectedKioskId(id);
     // Push to browser history for back button support
-    window.history.pushState({ page: newPage }, '', `#${newPage}`);
+    const hash = id ? `#${newPage}/${id}` : `#${newPage}`;
+    window.history.pushState({ page: newPage, id }, '', hash);
   }, []);
+
+  const handleNavigateToKiosk = useCallback((kioskId: string) => {
+    handleNavigate('kiosk-detail', kioskId);
+  }, [handleNavigate]);
 
   if (!user) {
     return <LoginPage onLogin={handleLogin} />;
@@ -92,7 +112,14 @@ function App() {
       case 'dashboard':
         return <DashboardPage user={user} onLogout={handleLogout} onNavigate={handleNavigate} />;
       case 'kiosks':
-        return <KiosksPage />;
+        return <KiosksPage onNavigateToKiosk={handleNavigateToKiosk} />;
+      case 'kiosk-detail':
+        return (
+          <KioskDetailPage
+            kioskId={selectedKioskId || ''}
+            onBack={() => handleNavigate('kiosks')}
+          />
+        );
       case 'campaigns':
         return <CampaignsPage />;
       case 'analytics':
@@ -110,11 +137,14 @@ function App() {
     }
   };
 
+  // Determine which sidebar page to highlight (kiosk-detail should highlight kiosks)
+  const sidebarPage = currentPage === 'kiosk-detail' ? 'kiosks' : currentPage;
+
   return (
     <div className="dashboard-layout">
       <Sidebar
         user={user}
-        currentPage={currentPage}
+        currentPage={sidebarPage}
         onNavigate={handleNavigate}
         onLogout={handleLogout}
       />

@@ -15,6 +15,7 @@ export function QuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showInactive, setShowInactive] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -71,6 +72,22 @@ export function QuestionsPage() {
     setQuestions((prev) =>
       prev.map((q) => (q.id === id ? { ...q, active: !q.active } : q))
     );
+  };
+
+  const handleEdit = (question: Question) => {
+    setEditingQuestion({ ...question });
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingQuestion) return;
+    setQuestions((prev) =>
+      prev.map((q) => (q.id === editingQuestion.id ? editingQuestion : q))
+    );
+    setEditingQuestion(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingQuestion(null);
   };
 
   const filteredQuestions = showInactive
@@ -141,7 +158,13 @@ export function QuestionsPage() {
               </div>
             </div>
             <div className="question-actions">
-              <button className="action-button small">Edit</button>
+              <button
+                className="action-button small"
+                onClick={() => handleEdit(question)}
+                data-testid={`edit-question-${question.id}`}
+              >
+                Edit
+              </button>
               <button
                 className="action-button small toggle"
                 onClick={() => toggleActive(question.id)}
@@ -152,6 +175,98 @@ export function QuestionsPage() {
           </div>
         ))}
       </div>
+
+      {/* Edit Modal */}
+      {editingQuestion && (
+        <div className="modal-overlay" data-testid="edit-modal">
+          <div className="modal">
+            <div className="modal-header">
+              <h2>Edit Question</h2>
+              <button className="close-button" onClick={handleCancelEdit}>×</button>
+            </div>
+            <div className="modal-content">
+              <div className="form-group">
+                <label>Question ID</label>
+                <input type="text" value={editingQuestion.id} disabled />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Question (French)</label>
+                  <textarea
+                    value={editingQuestion.questionFr}
+                    onChange={(e) =>
+                      setEditingQuestion({ ...editingQuestion, questionFr: e.target.value })
+                    }
+                    data-testid="edit-question-fr"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Question (Dutch)</label>
+                  <textarea
+                    value={editingQuestion.questionNl}
+                    onChange={(e) =>
+                      setEditingQuestion({ ...editingQuestion, questionNl: e.target.value })
+                    }
+                    data-testid="edit-question-nl"
+                  />
+                </div>
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Answers (French)</label>
+                  {editingQuestion.answersFr.map((answer, idx) => (
+                    <input
+                      key={idx}
+                      type="text"
+                      value={answer}
+                      onChange={(e) => {
+                        const newAnswers = [...editingQuestion.answersFr];
+                        newAnswers[idx] = e.target.value;
+                        setEditingQuestion({ ...editingQuestion, answersFr: newAnswers });
+                      }}
+                      className={idx === editingQuestion.correctAnswer ? 'correct-answer' : ''}
+                    />
+                  ))}
+                </div>
+                <div className="form-group">
+                  <label>Answers (Dutch)</label>
+                  {editingQuestion.answersNl.map((answer, idx) => (
+                    <input
+                      key={idx}
+                      type="text"
+                      value={answer}
+                      onChange={(e) => {
+                        const newAnswers = [...editingQuestion.answersNl];
+                        newAnswers[idx] = e.target.value;
+                        setEditingQuestion({ ...editingQuestion, answersNl: newAnswers });
+                      }}
+                      className={idx === editingQuestion.correctAnswer ? 'correct-answer' : ''}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Correct Answer</label>
+                <select
+                  value={editingQuestion.correctAnswer}
+                  onChange={(e) =>
+                    setEditingQuestion({ ...editingQuestion, correctAnswer: Number(e.target.value) })
+                  }
+                  data-testid="edit-correct-answer"
+                >
+                  {editingQuestion.answersFr.map((_, idx) => (
+                    <option key={idx} value={idx}>Answer {idx + 1}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-button" onClick={handleCancelEdit}>Cancel</button>
+              <button className="primary-button" onClick={handleSaveEdit} data-testid="save-edit">Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

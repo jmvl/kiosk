@@ -17,11 +17,14 @@ interface DailyStats {
   revenue: number;
 }
 
+type AnalyticsTab = 'overview' | 'daily' | 'kiosks';
+
 export function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [dateRange, setDateRange] = useState('7days');
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -62,11 +65,154 @@ export function AnalyticsPage() {
     );
   }
 
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <>
+            {/* Stats Cards */}
+            <div className="stats-grid">
+              <div className="stat-card">
+                <h3>Total Plays</h3>
+                <p className="stat-value">{analytics?.totalPlays.toLocaleString()}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Total Wins</h3>
+                <p className="stat-value">{analytics?.totalWins.toLocaleString()}</p>
+                <p className="stat-detail">{analytics?.winRate.toFixed(1)}% win rate</p>
+              </div>
+              <div className="stat-card">
+                <h3>Revenue</h3>
+                <p className="stat-value">€{analytics?.revenue.toLocaleString()}</p>
+              </div>
+              <div className="stat-card">
+                <h3>Avg Plays/Kiosk</h3>
+                <p className="stat-value">{analytics?.avgPlaysPerKiosk}</p>
+              </div>
+            </div>
+
+            {/* Top Performer */}
+            <div className="info-card">
+              <h3>Top Performing Kiosk</h3>
+              <p>{analytics?.topKiosk}</p>
+            </div>
+          </>
+        );
+      case 'daily':
+        return (
+          <div className="table-container">
+            <h2>Daily Breakdown</h2>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Plays</th>
+                  <th>Wins</th>
+                  <th>Win Rate</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyStats.map((day) => (
+                  <tr key={day.date}>
+                    <td>{day.date}</td>
+                    <td>{day.plays}</td>
+                    <td>{day.wins}</td>
+                    <td>{((day.wins / day.plays) * 100).toFixed(1)}%</td>
+                    <td>€{day.revenue}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+      case 'kiosks':
+        return (
+          <div className="table-container">
+            <h2>Kiosk Performance</h2>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Kiosk</th>
+                  <th>Location</th>
+                  <th>Plays</th>
+                  <th>Wins</th>
+                  <th>Revenue</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>KIOSK-001</td>
+                  <td>Brussels - Central</td>
+                  <td>312</td>
+                  <td>94</td>
+                  <td>€624</td>
+                </tr>
+                <tr>
+                  <td>KIOSK-002</td>
+                  <td>Brussels - Central</td>
+                  <td>287</td>
+                  <td>86</td>
+                  <td>€574</td>
+                </tr>
+                <tr>
+                  <td>KIOSK-003</td>
+                  <td>Antwerp - Mall</td>
+                  <td>356</td>
+                  <td>107</td>
+                  <td>€712</td>
+                </tr>
+                <tr>
+                  <td>KIOSK-004</td>
+                  <td>Ghent - Station</td>
+                  <td>198</td>
+                  <td>59</td>
+                  <td>€396</td>
+                </tr>
+                <tr>
+                  <td>KIOSK-005</td>
+                  <td>Bruges - Center</td>
+                  <td>92</td>
+                  <td>28</td>
+                  <td>€184</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+    }
+  };
+
   return (
     <div className="page-content">
       <div className="page-header">
         <h1>Analytics</h1>
         <p>View performance metrics and insights</p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="tabs-container">
+        <button
+          className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
+          onClick={() => setActiveTab('overview')}
+          data-testid="tab-overview"
+        >
+          Overview
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'daily' ? 'active' : ''}`}
+          onClick={() => setActiveTab('daily')}
+          data-testid="tab-daily"
+        >
+          Daily Stats
+        </button>
+        <button
+          className={`tab-button ${activeTab === 'kiosks' ? 'active' : ''}`}
+          onClick={() => setActiveTab('kiosks')}
+          data-testid="tab-kiosks"
+        >
+          By Kiosk
+        </button>
       </div>
 
       {/* Date Range Filter */}
@@ -82,58 +228,9 @@ export function AnalyticsPage() {
         </select>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Total Plays</h3>
-          <p className="stat-value">{analytics?.totalPlays.toLocaleString()}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Total Wins</h3>
-          <p className="stat-value">{analytics?.totalWins.toLocaleString()}</p>
-          <p className="stat-detail">{analytics?.winRate.toFixed(1)}% win rate</p>
-        </div>
-        <div className="stat-card">
-          <h3>Revenue</h3>
-          <p className="stat-value">€{analytics?.revenue.toLocaleString()}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Avg Plays/Kiosk</h3>
-          <p className="stat-value">{analytics?.avgPlaysPerKiosk}</p>
-        </div>
-      </div>
-
-      {/* Top Performer */}
-      <div className="info-card">
-        <h3>Top Performing Kiosk</h3>
-        <p>{analytics?.topKiosk}</p>
-      </div>
-
-      {/* Daily Stats Table */}
-      <div className="table-container">
-        <h2>Daily Breakdown</h2>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Plays</th>
-              <th>Wins</th>
-              <th>Win Rate</th>
-              <th>Revenue</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dailyStats.map((day) => (
-              <tr key={day.date}>
-                <td>{day.date}</td>
-                <td>{day.plays}</td>
-                <td>{day.wins}</td>
-                <td>{((day.wins / day.plays) * 100).toFixed(1)}%</td>
-                <td>€{day.revenue}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Tab Content */}
+      <div className="tab-content" data-testid="tab-content">
+        {renderTabContent()}
       </div>
     </div>
   );

@@ -12,11 +12,18 @@ interface Kiosk {
   todayWins: number;
 }
 
-export function KiosksPage() {
+export interface KiosksPageProps {
+  onNavigateToKiosk?: (kioskId: string) => void;
+}
+
+const ITEMS_PER_PAGE = 5;
+
+export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
   const [kiosks, setKiosks] = useState<Kiosk[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     const loadKiosks = async () => {
@@ -75,6 +82,76 @@ export function KiosksPage() {
           todayPlays: 0,
           todayWins: 0,
         },
+        {
+          id: 'KIOSK-006',
+          name: 'West Wing',
+          location: 'Liege - Mall',
+          status: 'online',
+          lastSeen: new Date(),
+          inventory: 72,
+          todayPlays: 33,
+          todayWins: 10,
+        },
+        {
+          id: 'KIOSK-007',
+          name: 'Garden Center',
+          location: 'Leuven - Suburb',
+          status: 'online',
+          lastSeen: new Date(),
+          inventory: 88,
+          todayPlays: 28,
+          todayWins: 8,
+        },
+        {
+          id: 'KIOSK-008',
+          name: 'Kids Zone',
+          location: 'Antwerp - Mall',
+          status: 'error',
+          lastSeen: new Date(Date.now() - 1800000),
+          inventory: 56,
+          todayPlays: 15,
+          todayWins: 4,
+        },
+        {
+          id: 'KIOSK-009',
+          name: 'Sports Section',
+          location: 'Brussels - North',
+          status: 'online',
+          lastSeen: new Date(),
+          inventory: 91,
+          todayPlays: 45,
+          todayWins: 14,
+        },
+        {
+          id: 'KIOSK-010',
+          name: 'Bakery Counter',
+          location: 'Ghent - Downtown',
+          status: 'online',
+          lastSeen: new Date(),
+          inventory: 79,
+          todayPlays: 37,
+          todayWins: 11,
+        },
+        {
+          id: 'KIOSK-011',
+          name: 'Pharmacy Entrance',
+          location: 'Charleroi - Mall',
+          status: 'offline',
+          lastSeen: new Date(Date.now() - 7200000),
+          inventory: 34,
+          todayPlays: 0,
+          todayWins: 0,
+        },
+        {
+          id: 'KIOSK-012',
+          name: 'Customer Service',
+          location: 'Namur - Center',
+          status: 'online',
+          lastSeen: new Date(),
+          inventory: 65,
+          todayPlays: 22,
+          todayWins: 7,
+        },
       ]);
 
       setIsLoading(false);
@@ -92,6 +169,12 @@ export function KiosksPage() {
     return badges[status];
   };
 
+  const handleRowClick = (kioskId: string) => {
+    if (onNavigateToKiosk) {
+      onNavigateToKiosk(kioskId);
+    }
+  };
+
   const filteredKiosks = kiosks.filter((kiosk) => {
     const matchesSearch =
       kiosk.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -100,6 +183,26 @@ export function KiosksPage() {
     const matchesStatus = statusFilter === 'all' || kiosk.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredKiosks.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedKiosks = filteredKiosks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Reset to page 1 when filters change
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusChange = (value: string) => {
+    setStatusFilter(value);
+    setCurrentPage(1);
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
 
   if (isLoading) {
     return (
@@ -122,12 +225,12 @@ export function KiosksPage() {
           type="text"
           placeholder="Search kiosks..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="search-input"
         />
         <select
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={(e) => handleStatusChange(e.target.value)}
           className="filter-select"
         >
           <option value="all">All Status</option>
@@ -154,8 +257,13 @@ export function KiosksPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredKiosks.map((kiosk) => (
-              <tr key={kiosk.id}>
+            {paginatedKiosks.map((kiosk) => (
+              <tr
+                key={kiosk.id}
+                onClick={() => handleRowClick(kiosk.id)}
+                className="clickable-row"
+                data-testid={`kiosk-row-${kiosk.id}`}
+              >
                 <td>{kiosk.id}</td>
                 <td>{kiosk.name}</td>
                 <td>{kiosk.location}</td>
@@ -167,13 +275,60 @@ export function KiosksPage() {
                 <td>{kiosk.todayWins}</td>
                 <td>{kiosk.lastSeen.toLocaleTimeString()}</td>
                 <td>
-                  <button className="action-button small">Configure</button>
+                  <button
+                    className="action-button small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRowClick(kiosk.id);
+                    }}
+                  >
+                    View Details
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="pagination" data-testid="pagination">
+          <button
+            className="pagination-btn"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            data-testid="prev-page"
+          >
+            ← Previous
+          </button>
+          <div className="pagination-pages">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                className={`pagination-page ${currentPage === page ? 'active' : ''}`}
+                onClick={() => goToPage(page)}
+                data-testid={`page-${page}`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
+          <button
+            className="pagination-btn"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            data-testid="next-page"
+          >
+            Next →
+          </button>
+        </div>
+      )}
+
+      <p className="pagination-info">
+        Showing {startIndex + 1}-{Math.min(startIndex + ITEMS_PER_PAGE, filteredKiosks.length)} of{' '}
+        {filteredKiosks.length} kiosks
+      </p>
     </div>
   );
 }
