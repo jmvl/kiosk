@@ -1,22 +1,10 @@
-// Admin Dashboard - Main Dashboard Page (Overview)
+// Admin Dashboard - Kiosks Management Page
 import { useState, useEffect } from 'react';
-import { UserRole } from '../components/Sidebar';
 
-interface User {
-  email: string;
-  name?: string;
-  role: UserRole;
-}
-
-export interface DashboardPageProps {
-  user: User;
-  onLogout: () => void;
-  onNavigate?: (page: string) => void;
-}
-
-interface KioskStatus {
+interface Kiosk {
   id: string;
   name: string;
+  location: string;
   status: 'online' | 'offline' | 'error';
   lastSeen: Date;
   inventory: number;
@@ -24,43 +12,23 @@ interface KioskStatus {
   todayWins: number;
 }
 
-interface DashboardStats {
-  totalKiosks: number;
-  onlineKiosks: number;
-  totalPlaysToday: number;
-  totalWinsToday: number;
-  winRate: number;
-  totalRevenue: number;
-}
-
-export function DashboardPage({ user }: DashboardPageProps) {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [kiosks, setKiosks] = useState<KioskStatus[]>([]);
+export function KiosksPage() {
+  const [kiosks, setKiosks] = useState<Kiosk[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    // Load dashboard data
-    const loadData = async () => {
+    const loadKiosks = async () => {
       setIsLoading(true);
-
-      // TODO: Replace with actual Convex queries
-      // Simulate loading
+      // TODO: Replace with actual Convex query
       await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Mock data for MVP
-      setStats({
-        totalKiosks: 5,
-        onlineKiosks: 4,
-        totalPlaysToday: 156,
-        totalWinsToday: 47,
-        winRate: 30.1,
-        totalRevenue: 312,
-      });
 
       setKiosks([
         {
           id: 'KIOSK-001',
           name: 'Main Entrance',
+          location: 'Brussels - Central',
           status: 'online',
           lastSeen: new Date(),
           inventory: 85,
@@ -70,6 +38,7 @@ export function DashboardPage({ user }: DashboardPageProps) {
         {
           id: 'KIOSK-002',
           name: 'Checkout Area',
+          location: 'Brussels - Central',
           status: 'online',
           lastSeen: new Date(),
           inventory: 92,
@@ -79,6 +48,7 @@ export function DashboardPage({ user }: DashboardPageProps) {
         {
           id: 'KIOSK-003',
           name: 'Food Court',
+          location: 'Antwerp - Mall',
           status: 'online',
           lastSeen: new Date(),
           inventory: 67,
@@ -88,6 +58,7 @@ export function DashboardPage({ user }: DashboardPageProps) {
         {
           id: 'KIOSK-004',
           name: 'Electronics',
+          location: 'Ghent - Station',
           status: 'online',
           lastSeen: new Date(Date.now() - 300000),
           inventory: 78,
@@ -97,6 +68,7 @@ export function DashboardPage({ user }: DashboardPageProps) {
         {
           id: 'KIOSK-005',
           name: 'Parking Lot',
+          location: 'Bruges - Center',
           status: 'offline',
           lastSeen: new Date(Date.now() - 3600000),
           inventory: 45,
@@ -108,10 +80,10 @@ export function DashboardPage({ user }: DashboardPageProps) {
       setIsLoading(false);
     };
 
-    loadData();
+    loadKiosks();
   }, []);
 
-  const getStatusBadge = (status: KioskStatus['status']) => {
+  const getStatusBadge = (status: Kiosk['status']) => {
     const badges = {
       online: 'status-badge online',
       offline: 'status-badge offline',
@@ -120,64 +92,73 @@ export function DashboardPage({ user }: DashboardPageProps) {
     return badges[status];
   };
 
+  const filteredKiosks = kiosks.filter((kiosk) => {
+    const matchesSearch =
+      kiosk.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      kiosk.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      kiosk.location.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || kiosk.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
   if (isLoading) {
     return (
       <div className="page-loading">
-        <p>Loading dashboard...</p>
+        <p>Loading kiosks...</p>
       </div>
     );
   }
 
   return (
     <div className="page-content">
-      {/* Page Header */}
       <div className="page-header">
-        <h1>Dashboard</h1>
-        <p>Welcome back, {user.name || user.email}</p>
+        <h1>Kiosks</h1>
+        <p>Manage and monitor all kiosk devices</p>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <h3>Total Kiosks</h3>
-          <p className="stat-value">{stats?.totalKiosks}</p>
-          <p className="stat-detail">{stats?.onlineKiosks} online</p>
-        </div>
-        <div className="stat-card">
-          <h3>Today's Plays</h3>
-          <p className="stat-value">{stats?.totalPlaysToday}</p>
-        </div>
-        <div className="stat-card">
-          <h3>Today's Wins</h3>
-          <p className="stat-value">{stats?.totalWinsToday}</p>
-          <p className="stat-detail">{stats?.winRate.toFixed(1)}% win rate</p>
-        </div>
-        <div className="stat-card">
-          <h3>Revenue</h3>
-          <p className="stat-value">€{stats?.totalRevenue}</p>
-        </div>
+      {/* Filters */}
+      <div className="filters-bar">
+        <input
+          type="text"
+          placeholder="Search kiosks..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="search-input"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="filter-select"
+        >
+          <option value="all">All Status</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+          <option value="error">Error</option>
+        </select>
       </div>
 
-      {/* Kiosk Status Overview */}
+      {/* Kiosks Table */}
       <div className="table-container">
-        <h2>Kiosk Status</h2>
         <table className="data-table">
           <thead>
             <tr>
-              <th>Kiosk</th>
+              <th>Kiosk ID</th>
+              <th>Name</th>
               <th>Location</th>
               <th>Status</th>
               <th>Inventory</th>
-              <th>Plays</th>
-              <th>Wins</th>
+              <th>Today Plays</th>
+              <th>Today Wins</th>
               <th>Last Seen</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {kiosks.map((kiosk) => (
+            {filteredKiosks.map((kiosk) => (
               <tr key={kiosk.id}>
                 <td>{kiosk.id}</td>
                 <td>{kiosk.name}</td>
+                <td>{kiosk.location}</td>
                 <td>
                   <span className={getStatusBadge(kiosk.status)}>{kiosk.status}</span>
                 </td>
@@ -185,6 +166,9 @@ export function DashboardPage({ user }: DashboardPageProps) {
                 <td>{kiosk.todayPlays}</td>
                 <td>{kiosk.todayWins}</td>
                 <td>{kiosk.lastSeen.toLocaleTimeString()}</td>
+                <td>
+                  <button className="action-button small">Configure</button>
+                </td>
               </tr>
             ))}
           </tbody>
