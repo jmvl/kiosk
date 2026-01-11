@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import type { Prize } from '@shared/types';
+import { storageService } from './StorageService';
 
 /**
  * Printer Service
@@ -78,6 +79,11 @@ export class PrinterService {
         console.log('Expires:', new Date(prize.expiresAt).toLocaleString());
         console.log('QR Code Data:', qrData);
         console.log('='.repeat(40));
+
+        // Decrement inventory on successful print
+        const newInventory = await storageService.decrementInventory();
+        console.log('[PrinterService] Inventory remaining:', newInventory);
+
         return true;
       }
 
