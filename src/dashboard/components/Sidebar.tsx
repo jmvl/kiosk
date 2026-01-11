@@ -151,11 +151,15 @@ export function Sidebar({ user, currentPage, onNavigate, onLogout }: SidebarProp
 
   return (
     <aside className="sidebar" data-testid="sidebar">
-      {/* Logo/Brand */}
-      <div className="sidebar-brand">
+      {/* Logo/Brand - Clickable to go to dashboard */}
+      <button
+        className="sidebar-brand"
+        onClick={() => onNavigate('dashboard')}
+        data-testid="home-link"
+      >
         <div className="brand-logo">🎰</div>
         <span className="brand-name">Kiosk Admin</span>
-      </div>
+      </button>
 
       {/* Navigation */}
       <nav className="sidebar-nav" data-testid="sidebar-nav">
