@@ -269,7 +269,7 @@ export function UsersPage() {
           <div className="modal">
             <div className="modal-header">
               <h2>Edit User</h2>
-              <button className="close-button" onClick={handleCancelEdit}>×</button>
+              <button className="close-button" onClick={handleCancelEdit} aria-label="Close modal">×</button>
             </div>
             <div className="modal-content">
               <div className="form-group">
@@ -349,7 +349,7 @@ export function UsersPage() {
           <div className="modal">
             <div className="modal-header">
               <h2>Add New User</h2>
-              <button className="close-button" onClick={() => setShowCreateModal(false)}>×</button>
+              <button className="close-button" onClick={() => setShowCreateModal(false)} aria-label="Close modal">×</button>
             </div>
             <div className="modal-content">
               <div className="form-row">

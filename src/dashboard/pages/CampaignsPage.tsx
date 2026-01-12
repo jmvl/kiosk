@@ -338,17 +338,18 @@ export function CampaignsPage() {
           <div className="modal">
             <div className="modal-header">
               <h2>Edit Campaign</h2>
-              <button className="close-button" onClick={handleCancelEdit}>×</button>
+              <button className="close-button" onClick={handleCancelEdit} aria-label="Close modal">×</button>
             </div>
             <div className="modal-content">
               <div className="form-group">
-                <label>Campaign ID</label>
-                <input type="text" value={editingCampaign.id} disabled />
+                <label htmlFor="edit-campaign-id">Campaign ID</label>
+                <input type="text" id="edit-campaign-id" value={editingCampaign.id} disabled />
               </div>
               <div className="form-group">
-                <label>Campaign Name</label>
+                <label htmlFor="edit-campaign-name-input">Campaign Name</label>
                 <input
                   type="text"
+                  id="edit-campaign-name-input"
                   value={editingCampaign.name}
                   onChange={(e) =>
                     setEditingCampaign({ ...editingCampaign, name: e.target.value })
@@ -358,9 +359,10 @@ export function CampaignsPage() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Start Date</label>
+                  <label htmlFor="edit-campaign-start-input">Start Date</label>
                   <input
                     type="date"
+                    id="edit-campaign-start-input"
                     value={formatDateForInput(editingCampaign.startDate)}
                     onChange={(e) =>
                       setEditingCampaign({ ...editingCampaign, startDate: new Date(e.target.value) })
@@ -369,9 +371,10 @@ export function CampaignsPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>End Date</label>
+                  <label htmlFor="edit-campaign-end-input">End Date</label>
                   <input
                     type="date"
+                    id="edit-campaign-end-input"
                     value={formatDateForInput(editingCampaign.endDate)}
                     onChange={(e) =>
                       setEditingCampaign({ ...editingCampaign, endDate: new Date(e.target.value) })
@@ -382,8 +385,9 @@ export function CampaignsPage() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Status</label>
+                  <label htmlFor="edit-campaign-status-input">Status</label>
                   <select
+                    id="edit-campaign-status-input"
                     value={editingCampaign.status}
                     onChange={(e) =>
                       setEditingCampaign({ ...editingCampaign, status: e.target.value as Campaign['status'] })
@@ -397,9 +401,10 @@ export function CampaignsPage() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Target Kiosks</label>
+                  <label htmlFor="edit-campaign-kiosks-input">Target Kiosks</label>
                   <input
                     type="number"
+                    id="edit-campaign-kiosks-input"
                     value={editingCampaign.targetKiosks}
                     onChange={(e) =>
                       setEditingCampaign({ ...editingCampaign, targetKiosks: Number(e.target.value) })
@@ -423,13 +428,14 @@ export function CampaignsPage() {
           <div className="modal">
             <div className="modal-header">
               <h2>Create Campaign</h2>
-              <button className="close-button" onClick={() => setShowCreateModal(false)}>×</button>
+              <button className="close-button" onClick={() => setShowCreateModal(false)} aria-label="Close modal">×</button>
             </div>
             <div className="modal-content">
               <div className="form-group">
-                <label>Campaign Name *</label>
+                <label htmlFor="create-campaign-name-input">Campaign Name *</label>
                 <input
                   type="text"
+                  id="create-campaign-name-input"
                   value={newCampaign.name || ''}
                   onChange={(e) => setNewCampaign({ ...newCampaign, name: e.target.value })}
                   placeholder="Enter campaign name"
@@ -437,8 +443,9 @@ export function CampaignsPage() {
                 />
               </div>
               <div className="form-group">
-                <label>Video Ad</label>
+                <label htmlFor="create-campaign-ad-input">Video Ad</label>
                 <select
+                  id="create-campaign-ad-input"
                   value={newCampaign.adId || ''}
                   onChange={(e) => setNewCampaign({ ...newCampaign, adId: e.target.value })}
                   data-testid="create-campaign-ad"
@@ -451,18 +458,20 @@ export function CampaignsPage() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Start Date *</label>
+                  <label htmlFor="create-campaign-start-input">Start Date *</label>
                   <input
                     type="date"
+                    id="create-campaign-start-input"
                     value={newCampaign.startDate ? formatDateForInput(newCampaign.startDate) : ''}
                     onChange={(e) => setNewCampaign({ ...newCampaign, startDate: new Date(e.target.value) })}
                     data-testid="create-campaign-start"
                   />
                 </div>
                 <div className="form-group">
-                  <label>End Date *</label>
+                  <label htmlFor="create-campaign-end-input">End Date *</label>
                   <input
                     type="date"
+                    id="create-campaign-end-input"
                     value={newCampaign.endDate ? formatDateForInput(newCampaign.endDate) : ''}
                     onChange={(e) => setNewCampaign({ ...newCampaign, endDate: new Date(e.target.value) })}
                     data-testid="create-campaign-end"
@@ -470,9 +479,10 @@ export function CampaignsPage() {
                 </div>
               </div>
               <div className="form-group">
-                <label>Target Kiosks</label>
+                <label htmlFor="create-campaign-kiosks-input">Target Kiosks</label>
                 <input
                   type="number"
+                  id="create-campaign-kiosks-input"
                   min="1"
                   value={newCampaign.targetKiosks || 1}
                   onChange={(e) => setNewCampaign({ ...newCampaign, targetKiosks: Number(e.target.value) })}
