@@ -41,10 +41,15 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadKiosks = async () => {
       setIsLoading(true);
       // TODO: Replace with actual Convex query
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Don't update state if component unmounted during fetch
+      if (!isMounted) return;
 
       setKiosks([
         {
@@ -173,6 +178,10 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
     };
 
     loadKiosks();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const getStatusBadge = (status: Kiosk['status']) => {

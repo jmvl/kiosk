@@ -1,5 +1,5 @@
 // Admin Dashboard - Quiz Questions Management Page
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface Question {
   id: string;
@@ -11,11 +11,22 @@ interface Question {
   active: boolean;
 }
 
+// Interface for imported question format
+interface ImportedQuestion {
+  questionFr: string;
+  questionNl: string;
+  answersFr: string[];
+  answersNl: string[];
+  correctAnswer: number;
+}
+
 export function QuestionsPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showInactive, setShowInactive] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -90,6 +101,61 @@ export function QuestionsPage() {
     setEditingQuestion(null);
   };
 
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImportError(null);
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const imported = JSON.parse(content) as ImportedQuestion[];
+
+        if (!Array.isArray(imported)) {
+          throw new Error('Invalid format: expected array of questions');
+        }
+
+        // Validate and convert imported questions
+        const newQuestions: Question[] = imported.map((q, index) => {
+          if (!q.questionFr || !q.questionNl || !q.answersFr || !q.answersNl) {
+            throw new Error(`Question ${index + 1}: Missing required fields (questionFr, questionNl, answersFr, answersNl)`);
+          }
+          if (!Array.isArray(q.answersFr) || !Array.isArray(q.answersNl)) {
+            throw new Error(`Question ${index + 1}: answersFr and answersNl must be arrays`);
+          }
+          if (q.answersFr.length !== q.answersNl.length) {
+            throw new Error(`Question ${index + 1}: answersFr and answersNl must have same length`);
+          }
+
+          return {
+            id: `Q-${String(questions.length + index + 1).padStart(3, '0')}`,
+            questionFr: q.questionFr,
+            questionNl: q.questionNl,
+            answersFr: q.answersFr,
+            answersNl: q.answersNl,
+            correctAnswer: q.correctAnswer ?? 0,
+            active: true,
+          };
+        });
+
+        setQuestions((prev) => [...prev, ...newQuestions]);
+        alert(`Successfully imported ${newQuestions.length} questions`);
+      } catch (err) {
+        setImportError(err instanceof Error ? err.message : 'Failed to parse JSON file');
+      }
+    };
+
+    reader.readAsText(file);
+    // Reset input so same file can be imported again
+    event.target.value = '';
+  };
+
   const filteredQuestions = showInactive
     ? questions
     : questions.filter((q) => q.active);
@@ -111,6 +177,21 @@ export function QuestionsPage() {
 
       <div className="page-actions">
         <button className="primary-button">+ Add Question</button>
+        <button
+          className="secondary-button"
+          onClick={handleImportClick}
+          data-testid="import-questions"
+        >
+          Import JSON
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".json"
+          onChange={handleFileImport}
+          style={{ display: 'none' }}
+          aria-label="Import questions from JSON file"
+        />
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -120,6 +201,12 @@ export function QuestionsPage() {
           Show inactive questions
         </label>
       </div>
+
+      {importError && (
+        <div className="error-message" role="alert">
+          Import Error: {importError}
+        </div>
+      )}
 
       {/* Questions List */}
       <div className="questions-list">

@@ -18,7 +18,31 @@ interface DailyStats {
 }
 
 type AnalyticsTab = 'overview' | 'daily' | 'kiosks';
-type DateRange = '7days' | '30days' | '90days';
+type DateRange = 'today' | '7days' | '30days' | '90days';
+
+// Export data to CSV
+const exportToCsv = (data: DailyStats[], filename: string) => {
+  const headers = ['Date', 'Plays', 'Wins', 'Win Rate', 'Revenue'];
+  const rows = data.map((row) => [
+    row.date,
+    row.plays.toString(),
+    row.wins.toString(),
+    `${((row.wins / row.plays) * 100).toFixed(1)}%`,
+    `€${row.revenue}`,
+  ]);
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map((row) => row.join(',')),
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+};
 
 // Parse URL search params for filters
 const getParamsFromUrl = () => {
@@ -27,7 +51,7 @@ const getParamsFromUrl = () => {
   const range = params.get('range') as DateRange | null;
   return {
     tab: ['overview', 'daily', 'kiosks'].includes(tab || '') ? tab : 'overview',
-    range: ['7days', '30days', '90days'].includes(range || '') ? range : '7days',
+    range: ['today', '7days', '30days', '90days'].includes(range || '') ? range : '7days',
   };
 };
 
@@ -65,21 +89,21 @@ export function AnalyticsPage() {
   }, []);
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadAnalytics = async () => {
       setIsLoading(true);
       // TODO: Replace with actual Convex query
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      setAnalytics({
-        totalPlays: 1245,
-        totalWins: 374,
-        winRate: 30.0,
-        revenue: 2490,
-        avgPlaysPerKiosk: 249,
-        topKiosk: 'KIOSK-003 (Food Court)',
-      });
+      // Don't update state if component unmounted during fetch
+      if (!isMounted) return;
 
-      setDailyStats([
+      // Get today's date string for filtering
+      const today = new Date().toISOString().split('T')[0];
+
+      // Mock data for different date ranges
+      const allDailyStats: DailyStats[] = [
         { date: '2025-01-05', plays: 156, wins: 47, revenue: 312 },
         { date: '2025-01-06', plays: 189, wins: 58, revenue: 378 },
         { date: '2025-01-07', plays: 201, wins: 61, revenue: 402 },
@@ -87,12 +111,43 @@ export function AnalyticsPage() {
         { date: '2025-01-09', plays: 165, wins: 50, revenue: 330 },
         { date: '2025-01-10', plays: 198, wins: 59, revenue: 396 },
         { date: '2025-01-11', plays: 158, wins: 47, revenue: 316 },
-      ]);
+        { date: today, plays: 142, wins: 43, revenue: 284 }, // Today's data
+      ];
+
+      // Filter based on date range
+      let filteredStats: DailyStats[];
+      if (dateRange === 'today') {
+        filteredStats = allDailyStats.filter((day) => day.date === today);
+      } else {
+        const daysToShow = dateRange === '7days' ? 7 : dateRange === '30days' ? 30 : 90;
+        filteredStats = allDailyStats.slice(-daysToShow);
+      }
+
+      // Calculate aggregates from filtered data
+      const totalPlays = filteredStats.reduce((sum, day) => sum + day.plays, 0);
+      const totalWins = filteredStats.reduce((sum, day) => sum + day.wins, 0);
+      const totalRevenue = filteredStats.reduce((sum, day) => sum + day.revenue, 0);
+      const winRate = totalPlays > 0 ? (totalWins / totalPlays) * 100 : 0;
+
+      setAnalytics({
+        totalPlays,
+        totalWins,
+        winRate,
+        revenue: totalRevenue,
+        avgPlaysPerKiosk: Math.round(totalPlays / 5), // Assuming 5 kiosks
+        topKiosk: 'KIOSK-003 (Food Court)',
+      });
+
+      setDailyStats(filteredStats);
 
       setIsLoading(false);
     };
 
     loadAnalytics();
+
+    return () => {
+      isMounted = false;
+    };
   }, [dateRange]);
 
   if (isLoading) {
@@ -259,11 +314,20 @@ export function AnalyticsPage() {
           value={dateRange}
           onChange={(e) => handleRangeChange(e.target.value as DateRange)}
           className="filter-select"
+          aria-label="Date range filter"
         >
+          <option value="today">Today</option>
           <option value="7days">Last 7 Days</option>
           <option value="30days">Last 30 Days</option>
           <option value="90days">Last 90 Days</option>
         </select>
+        <button
+          className="primary-button"
+          onClick={() => exportToCsv(dailyStats, `analytics-${dateRange}.csv`)}
+          data-testid="export-csv"
+        >
+          Export CSV
+        </button>
       </div>
 
       {/* Tab Content */}

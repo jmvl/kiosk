@@ -39,6 +39,8 @@ export function DashboardPage({ user }: DashboardPageProps) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     // Load dashboard data
     const loadData = async () => {
       setIsLoading(true);
@@ -46,6 +48,9 @@ export function DashboardPage({ user }: DashboardPageProps) {
       // TODO: Replace with actual Convex queries
       // Simulate loading
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Don't update state if component unmounted during fetch
+      if (!isMounted) return;
 
       // Mock kiosk data for MVP
       const mockKiosks: KioskStatus[] = [
@@ -115,6 +120,10 @@ export function DashboardPage({ user }: DashboardPageProps) {
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const getStatusBadge = (status: KioskStatus['status']) => {

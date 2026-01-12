@@ -35,12 +35,17 @@ export function KioskDetailPage({ kioskId, onBack }: KioskDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadKiosk = async () => {
       setIsLoading(true);
       setError(null);
 
       // TODO: Replace with actual Convex query
       await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Don't update state if component unmounted during fetch
+      if (!isMounted) return;
 
       // Mock kiosk data based on ID
       const mockKiosks: Record<string, KioskDetail> = {
@@ -146,6 +151,10 @@ export function KioskDetailPage({ kioskId, onBack }: KioskDetailPageProps) {
     };
 
     loadKiosk();
+
+    return () => {
+      isMounted = false;
+    };
   }, [kioskId]);
 
   const getStatusBadge = (status: KioskDetail['status']) => {
