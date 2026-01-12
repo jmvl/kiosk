@@ -196,11 +196,13 @@ export function UsersPage() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="search-input"
+          aria-label="Search users"
         />
         <select
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
           className="filter-select"
+          aria-label="Filter by role"
         >
           <option value="all">All Roles</option>
           <option value="chain_hq">Chain HQ Admin</option>
@@ -271,14 +273,15 @@ export function UsersPage() {
             </div>
             <div className="modal-content">
               <div className="form-group">
-                <label>User ID</label>
-                <input type="text" value={editingUser.id} disabled />
+                <label htmlFor="edit-user-id">User ID</label>
+                <input type="text" id="edit-user-id" value={editingUser.id} disabled />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Name</label>
+                  <label htmlFor="edit-name">Name</label>
                   <input
                     type="text"
+                    id="edit-name"
                     value={editingUser.name}
                     onChange={(e) =>
                       setEditingUser({ ...editingUser, name: e.target.value })
@@ -287,9 +290,10 @@ export function UsersPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email</label>
+                  <label htmlFor="edit-email">Email</label>
                   <input
                     type="email"
+                    id="edit-email"
                     value={editingUser.email}
                     onChange={(e) =>
                       setEditingUser({ ...editingUser, email: e.target.value })
@@ -300,8 +304,9 @@ export function UsersPage() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Role</label>
+                  <label htmlFor="edit-role">Role</label>
                   <select
+                    id="edit-role"
                     value={editingUser.role}
                     onChange={(e) =>
                       setEditingUser({ ...editingUser, role: e.target.value as UserRole })
@@ -315,8 +320,9 @@ export function UsersPage() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Status</label>
+                  <label htmlFor="edit-status">Status</label>
                   <select
+                    id="edit-status"
                     value={editingUser.active ? 'active' : 'inactive'}
                     onChange={(e) =>
                       setEditingUser({ ...editingUser, active: e.target.value === 'active' })
@@ -348,9 +354,10 @@ export function UsersPage() {
             <div className="modal-content">
               <div className="form-row">
                 <div className="form-group">
-                  <label>Name *</label>
+                  <label htmlFor="create-name">Name *</label>
                   <input
                     type="text"
+                    id="create-name"
                     value={newUser.name || ''}
                     onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
                     placeholder="Enter full name"
@@ -358,9 +365,10 @@ export function UsersPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Email *</label>
+                  <label htmlFor="create-email">Email *</label>
                   <input
                     type="email"
+                    id="create-email"
                     value={newUser.email || ''}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     placeholder="Enter email address"
@@ -369,9 +377,10 @@ export function UsersPage() {
                 </div>
               </div>
               <div className="form-group">
-                <label>Password *</label>
+                <label htmlFor="create-password">Password *</label>
                 <input
                   type="password"
+                  id="create-password"
                   value={newUser.password || ''}
                   onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                   placeholder="Enter password"
@@ -380,8 +389,9 @@ export function UsersPage() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Role *</label>
+                  <label htmlFor="create-role">Role *</label>
                   <select
+                    id="create-role"
                     value={newUser.role || 'store_owner'}
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value as UserRole })}
                     data-testid="create-user-role"
@@ -393,8 +403,9 @@ export function UsersPage() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Status</label>
+                  <label htmlFor="create-status">Status</label>
                   <select
+                    id="create-status"
                     value={newUser.active ? 'active' : 'inactive'}
                     onChange={(e) => setNewUser({ ...newUser, active: e.target.value === 'active' })}
                     data-testid="create-user-status"

@@ -12,6 +12,57 @@ body {
   overflow: hidden; /* Kiosk mode: no scrollbars */
 }
 
+/* ======================
+   Keyboard Focus Styles (Accessibility)
+   ====================== */
+
+/* Global focus-visible styles for all interactive elements */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid #ffd700;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(255, 215, 0, 0.3);
+}
+
+/* Remove default outline (handled by focus-visible) */
+button:focus,
+a:focus,
+[tabindex]:focus {
+  outline: none;
+}
+
+/* Button focus styles */
+.push-button:focus-visible,
+.start-button:focus-visible,
+.cta-button:focus-visible,
+.answer-btn:focus-visible {
+  outline: 3px solid #ffd700;
+  outline-offset: 4px;
+  box-shadow:
+    0 0 0 8px rgba(255, 215, 0, 0.4),
+    0 8px 0 #660000,
+    0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Language selector focus */
+.lang-btn:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+/* High contrast focus for dark backgrounds */
+.loss-screen button:focus-visible,
+.win-screen button:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
 #root {
   width: 100vw;
   height: 100vh;
@@ -230,7 +281,7 @@ body {
 }
 
 /* ======================
-   Slot Machine Screen
+   Slot Machine Screen - Gold/Glossy Premium Aesthetic
    ====================== */
 .slot-machine-screen {
   width: 100%;
@@ -239,57 +290,152 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%);
+  background: radial-gradient(ellipse at center, #2a1810 0%, #1a0f0a 50%, #0d0705 100%);
   color: white;
   padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient gold particles background */
+.slot-machine-screen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(2px 2px at 10% 20%, rgba(255, 215, 0, 0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 30% 60%, rgba(255, 215, 0, 0.2) 0%, transparent 100%),
+    radial-gradient(2px 2px at 50% 40%, rgba(255, 215, 0, 0.3) 0%, transparent 100%),
+    radial-gradient(2px 2px at 70% 80%, rgba(255, 215, 0, 0.2) 0%, transparent 100%),
+    radial-gradient(2px 2px at 90% 30%, rgba(255, 215, 0, 0.3) 0%, transparent 100%);
+  pointer-events: none;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 
 .slot-title {
-  font-size: 2.5rem;
+  position: relative;
+  z-index: 1;
+  font-size: 3rem;
   margin-bottom: 2rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  font-weight: 800;
+  background: linear-gradient(180deg, #ffd700 0%, #ffb347 50%, #ffa500 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: none;
+  filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.4));
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .slot-machine-container {
   position: relative;
-  background: linear-gradient(145deg, #2c3e50, #1a252f);
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  z-index: 1;
+  background: linear-gradient(180deg, #3d2817 0%, #2a1810 50%, #1a0f0a 100%);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow:
+    0 0 0 4px #8b6914,
+    0 0 0 8px #5a4310,
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    inset 0 2px 10px rgba(255, 215, 0, 0.2);
+  border: 3px solid #b8860b;
+}
+
+/* Gold frame decoration */
+.slot-machine-container::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  background: linear-gradient(135deg, #ffd700 0%, #b8860b 50%, #8b6914 100%);
+  border-radius: 28px;
+  z-index: -1;
+  opacity: 0.8;
+}
+
+/* Corner decorations */
+.slot-machine-container::after {
+  content: '★';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
 }
 
 .reels-container {
   display: flex;
-  gap: 10px;
-  background: #111;
-  padding: 20px;
-  border-radius: 12px;
+  gap: 12px;
+  background: linear-gradient(180deg, #0a0705 0%, #15100c 50%, #0a0705 100%);
+  padding: 24px;
+  border-radius: 16px;
+  border: 2px solid #5a4310;
+  box-shadow:
+    inset 0 4px 20px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.1);
 }
 
 .reel {
-  width: 100px;
-  height: 180px;
-  background: white;
-  border-radius: 8px;
+  width: 110px;
+  height: 200px;
+  background: linear-gradient(180deg, #fff 0%, #f5f5f5 50%, #e8e8e8 100%);
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border: 3px solid #b8860b;
+  box-shadow:
+    inset 0 0 20px rgba(0, 0, 0, 0.1),
+    0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Glossy effect on reels */
+.reel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.4) 0%, transparent 100%);
+  border-radius: 12px 12px 0 0;
+  pointer-events: none;
 }
 
 .symbol {
-  font-size: 3rem;
-  padding: 10px;
+  font-size: 3.5rem;
+  padding: 12px;
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.2));
 }
 
 .symbol.winning {
-  animation: glow 0.5s infinite alternate;
+  animation: symbol-glow 0.4s ease-in-out infinite alternate;
 }
 
-@keyframes glow {
-  from { text-shadow: 0 0 10px gold; }
-  to { text-shadow: 0 0 20px gold, 0 0 30px yellow; }
+@keyframes symbol-glow {
+  from {
+    filter: drop-shadow(0 0 15px #ffd700);
+    transform: scale(1);
+  }
+  to {
+    filter: drop-shadow(0 0 30px #ffd700) drop-shadow(0 0 50px #ffb347);
+    transform: scale(1.1);
+  }
 }
 
 .reel.spinning .symbol {
@@ -303,67 +449,118 @@ body {
 
 .payline {
   position: absolute;
-  left: 20px;
-  right: 20px;
+  left: 16px;
+  right: 16px;
   top: 50%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, gold, transparent);
+  height: 4px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    #ffd700 10%,
+    #fff 50%,
+    #ffd700 90%,
+    transparent 100%
+  );
   transform: translateY(-50%);
+  pointer-events: none;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  z-index: 10;
+}
+
+/* Premium Push Button - Gold/Red theme */
+.push-button {
+  position: relative;
+  z-index: 1;
+  margin-top: 2.5rem;
+  padding: 1.5rem 5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  border: none;
+  border-radius: 60px;
+  background: linear-gradient(180deg, #ff4444 0%, #cc0000 50%, #990000 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  box-shadow:
+    0 0 0 4px #b8860b,
+    0 8px 0 #660000,
+    0 20px 40px rgba(0, 0, 0, 0.5),
+    inset 0 2px 10px rgba(255, 255, 255, 0.3);
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Glossy button effect */
+.push-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, transparent 100%);
+  border-radius: 60px 60px 0 0;
   pointer-events: none;
 }
 
-.push-button {
-  margin-top: 2rem;
-  padding: 1.5rem 4rem;
-  font-size: 1.5rem;
-  font-weight: bold;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(145deg, #e74c3c, #c0392b);
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-transform: uppercase;
-  box-shadow: 0 8px 0 #922b21, 0 15px 20px rgba(0, 0, 0, 0.4);
-}
-
 .push-button:hover:not(.disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 0 #922b21, 0 20px 25px rgba(0, 0, 0, 0.4);
+  transform: translateY(-3px);
+  box-shadow:
+    0 0 0 4px #ffd700,
+    0 12px 0 #660000,
+    0 25px 50px rgba(0, 0, 0, 0.5),
+    inset 0 2px 10px rgba(255, 255, 255, 0.3),
+    0 0 30px rgba(255, 215, 0, 0.4);
 }
 
 .push-button.active {
-  transform: translateY(4px);
-  box-shadow: 0 4px 0 #922b21, 0 8px 10px rgba(0, 0, 0, 0.4);
+  transform: translateY(6px);
+  box-shadow:
+    0 0 0 4px #b8860b,
+    0 2px 0 #660000,
+    0 8px 20px rgba(0, 0, 0, 0.5),
+    inset 0 2px 10px rgba(255, 255, 255, 0.3);
 }
 
 .push-button.disabled {
-  background: linear-gradient(145deg, #7f8c8d, #6c7a7d);
+  background: linear-gradient(180deg, #666 0%, #444 50%, #333 100%);
   cursor: not-allowed;
-  box-shadow: 0 4px 0 #566573, 0 8px 10px rgba(0, 0, 0, 0.3);
+  box-shadow:
+    0 0 0 3px #555,
+    0 4px 0 #222,
+    0 10px 20px rgba(0, 0, 0, 0.4);
 }
 
 .result-display {
+  position: relative;
+  z-index: 1;
   margin-top: 2rem;
-  padding: 1rem 2rem;
-  border-radius: 12px;
+  padding: 1.2rem 2.5rem;
+  border-radius: 16px;
   font-size: 1.5rem;
   font-weight: bold;
   text-align: center;
+  letter-spacing: 0.05em;
 }
 
 .result-display.win {
-  background: linear-gradient(145deg, #27ae60, #1e8449);
-  animation: celebrate 0.5s ease-in-out;
+  background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+  color: #1a0f0a;
+  border: 3px solid #fff;
+  box-shadow:
+    0 0 30px rgba(255, 215, 0, 0.8),
+    inset 0 2px 10px rgba(255, 255, 255, 0.5);
+  animation: celebrate-gold 0.5s ease-in-out;
 }
 
 .result-display.loss {
   background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-@keyframes celebrate {
+@keyframes celebrate-gold {
   0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+  50% { transform: scale(1.15); }
 }
 
 .instruction-text {
@@ -376,18 +573,251 @@ body {
    Win Screen
    ====================== */
 .win-screen {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+  background: linear-gradient(135deg, #ffd700 0%, #ff8c00 50%, #ff6347 100%);
   color: white;
   text-align: center;
   padding: 40px;
+  overflow: hidden;
 }
 
+/* Confetti Animation */
+.confetti-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 12px;
+  height: 12px;
+  opacity: 0.9;
+  animation: confetti-fall 3s ease-in-out infinite;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-20px) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* Flashing Lights Overlay */
+.lights-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.3) 100%);
+  animation: flash-lights 0.5s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@keyframes flash-lights {
+  0% {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.3) 0%, transparent 60%);
+  }
+  50% {
+    background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.4) 0%, transparent 50%);
+  }
+  100% {
+    background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  }
+}
+
+/* Win Overlay Content */
+.win-overlay {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.win-title {
+  font-size: 5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #fff;
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.8),
+    0 0 40px rgba(255, 215, 0, 0.6),
+    4px 4px 0 #b8860b,
+    -4px -4px 0 #ffd700;
+  animation: win-pulse 0.6s ease-in-out infinite alternate;
+  margin-bottom: 1rem;
+  letter-spacing: 0.1em;
+}
+
+@keyframes win-pulse {
+  0% {
+    transform: scale(1);
+    text-shadow:
+      0 0 20px rgba(255, 255, 255, 0.8),
+      0 0 40px rgba(255, 215, 0, 0.6),
+      4px 4px 0 #b8860b,
+      -4px -4px 0 #ffd700;
+  }
+  100% {
+    transform: scale(1.1);
+    text-shadow:
+      0 0 30px rgba(255, 255, 255, 1),
+      0 0 60px rgba(255, 215, 0, 0.9),
+      6px 6px 0 #b8860b,
+      -6px -6px 0 #ffd700;
+  }
+}
+
+/* Jackpot Animation */
+.jackpot-animation {
+  margin: 1rem 0;
+  padding: 1.5rem 3rem;
+  background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+  border-radius: 20px;
+  border: 4px solid #fff;
+  box-shadow:
+    0 0 30px rgba(255, 215, 0, 0.8),
+    inset 0 0 20px rgba(255, 255, 255, 0.3);
+  animation: jackpot-glow 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes jackpot-glow {
+  0% {
+    box-shadow:
+      0 0 30px rgba(255, 215, 0, 0.8),
+      inset 0 0 20px rgba(255, 255, 255, 0.3);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow:
+      0 0 50px rgba(255, 215, 0, 1),
+      0 0 80px rgba(255, 140, 0, 0.6),
+      inset 0 0 30px rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+  }
+}
+
+.jackpot-text {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  text-shadow:
+    2px 2px 4px rgba(0, 0, 0, 0.4),
+    0 0 20px rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.prize-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 1rem 2.5rem;
+  border-radius: 15px;
+  margin-top: 1.5rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  animation: prize-bounce 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes prize-bounce {
+  from { transform: translateY(0); }
+  to { transform: translateY(-8px); }
+}
+
+/* Ticket Message */
+.ticket-message {
+  position: relative;
+  z-index: 10;
+  margin-top: 2rem;
+  padding: 1.5rem 3rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slide-up 0.5s ease-out;
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.printing-text {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.printing-text.status-pending {
+  color: #666;
+}
+
+.printing-text.status-printing {
+  color: #2196f3;
+  animation: text-blink 0.8s ease-in-out infinite;
+}
+
+.printing-text.status-success {
+  color: #27ae60;
+}
+
+.printing-text.status-error {
+  color: #e74c3c;
+}
+
+@keyframes text-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.printer-animation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.printer-icon {
+  font-size: 3rem;
+  animation: printer-shake 0.3s ease-in-out infinite;
+}
+
+@keyframes printer-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* Legacy Win Screen Styles (backward compatibility) */
 .win-screen h1 {
   font-size: 4rem;
   margin-bottom: 1rem;
@@ -429,30 +859,104 @@ body {
    Loss Screen
    ====================== */
 .loss-screen {
+  position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #34495e 0%, #2c3e50 100%);
-  color: white;
+  background: linear-gradient(180deg, #2c3e50 0%, #1a252f 100%);
+  color: #b0b8c4;
   text-align: center;
   padding: 40px;
+  overflow: hidden;
 }
 
+/* Muted overlay effect */
+.loss-screen::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.05) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.loss-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: fade-in 0.5s ease-out;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.loss-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #8896a4;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.loss-message {
+  font-size: 1.5rem;
+  color: #7f8c9a;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.try-again-icon {
+  font-size: 4rem;
+  opacity: 0.5;
+  margin-top: 1rem;
+  animation: subtle-shake 2s ease-in-out infinite;
+}
+
+@keyframes subtle-shake {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+/* Legacy Loss Screen Styles (backward compatibility) */
 .loss-screen h1 {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: #8896a4;
 }
 
 .loss-screen p {
   font-size: 1.5rem;
   opacity: 0.8;
   margin-bottom: 2rem;
+  color: #7f8c9a;
 }
 
 .try-again-prompt {
   font-size: 1rem;
   opacity: 0.6;
+  color: #6c7a88;
 }

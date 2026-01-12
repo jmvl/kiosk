@@ -186,13 +186,14 @@ export function QuestionsPage() {
             </div>
             <div className="modal-content">
               <div className="form-group">
-                <label>Question ID</label>
-                <input type="text" value={editingQuestion.id} disabled />
+                <label htmlFor="question-id">Question ID</label>
+                <input type="text" id="question-id" value={editingQuestion.id} disabled />
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Question (French)</label>
+                  <label htmlFor="question-fr">Question (French)</label>
                   <textarea
+                    id="question-fr"
                     value={editingQuestion.questionFr}
                     onChange={(e) =>
                       setEditingQuestion({ ...editingQuestion, questionFr: e.target.value })
@@ -201,8 +202,9 @@ export function QuestionsPage() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Question (Dutch)</label>
+                  <label htmlFor="question-nl">Question (Dutch)</label>
                   <textarea
+                    id="question-nl"
                     value={editingQuestion.questionNl}
                     onChange={(e) =>
                       setEditingQuestion({ ...editingQuestion, questionNl: e.target.value })
@@ -213,12 +215,14 @@ export function QuestionsPage() {
               </div>
               <div className="form-row">
                 <div className="form-group">
-                  <label>Answers (French)</label>
+                  <label id="answers-fr-label">Answers (French)</label>
                   {editingQuestion.answersFr.map((answer, idx) => (
                     <input
                       key={idx}
                       type="text"
                       value={answer}
+                      aria-labelledby="answers-fr-label"
+                      aria-label={`French answer ${idx + 1}`}
                       onChange={(e) => {
                         const newAnswers = [...editingQuestion.answersFr];
                         newAnswers[idx] = e.target.value;
@@ -229,12 +233,14 @@ export function QuestionsPage() {
                   ))}
                 </div>
                 <div className="form-group">
-                  <label>Answers (Dutch)</label>
+                  <label id="answers-nl-label">Answers (Dutch)</label>
                   {editingQuestion.answersNl.map((answer, idx) => (
                     <input
                       key={idx}
                       type="text"
                       value={answer}
+                      aria-labelledby="answers-nl-label"
+                      aria-label={`Dutch answer ${idx + 1}`}
                       onChange={(e) => {
                         const newAnswers = [...editingQuestion.answersNl];
                         newAnswers[idx] = e.target.value;
@@ -246,8 +252,9 @@ export function QuestionsPage() {
                 </div>
               </div>
               <div className="form-group">
-                <label>Correct Answer</label>
+                <label htmlFor="correct-answer">Correct Answer</label>
                 <select
+                  id="correct-answer"
                   value={editingQuestion.correctAnswer}
                   onChange={(e) =>
                     setEditingQuestion({ ...editingQuestion, correctAnswer: Number(e.target.value) })
