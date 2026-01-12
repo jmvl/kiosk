@@ -156,6 +156,12 @@ export function CampaignsPage() {
       return;
     }
 
+    // Validate end date is after start date
+    if (newCampaign.endDate <= newCampaign.startDate) {
+      alert('End date must be after start date');
+      return;
+    }
+
     const campaign: Campaign = {
       id: `CAMP-${String(campaigns.length + 1).padStart(3, '0')}`,
       name: newCampaign.name || '',
