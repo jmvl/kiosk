@@ -190,6 +190,14 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
     }
   };
 
+  // Delete kiosk
+  const handleDelete = (kioskId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm('Are you sure you want to delete this kiosk?')) return;
+    setKiosks((prev) => prev.filter((k) => k.id !== kioskId));
+    // TODO: Delete from Convex
+  };
+
   const filteredKiosks = kiosks.filter((kiosk) => {
     const matchesSearch =
       kiosk.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -225,6 +233,19 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
     sessionStorage.setItem(STORAGE_KEYS.page, String(newPage));
   };
 
+  // Clear all filters
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('all');
+    setCurrentPage(1);
+    sessionStorage.removeItem(STORAGE_KEYS.search);
+    sessionStorage.removeItem(STORAGE_KEYS.status);
+    sessionStorage.removeItem(STORAGE_KEYS.page);
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all';
+
   if (isLoading) {
     return (
       <div className="page-loading">
@@ -259,6 +280,15 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
           <option value="offline">Offline</option>
           <option value="error">Error</option>
         </select>
+        {hasActiveFilters && (
+          <button
+            className="clear-filters-btn"
+            onClick={handleClearFilters}
+            data-testid="clear-filters"
+          >
+            Clear Filters
+          </button>
+        )}
       </div>
 
       {/* Kiosks Table */}
@@ -296,15 +326,24 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
                 <td>{kiosk.todayWins}</td>
                 <td>{kiosk.lastSeen.toLocaleTimeString()}</td>
                 <td>
-                  <button
-                    className="action-button small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRowClick(kiosk.id);
-                    }}
-                  >
-                    View Details
-                  </button>
+                  <div className="action-buttons">
+                    <button
+                      className="action-button small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRowClick(kiosk.id);
+                      }}
+                    >
+                      View
+                    </button>
+                    <button
+                      className="action-button small delete"
+                      onClick={(e) => handleDelete(kiosk.id, e)}
+                      data-testid={`delete-kiosk-${kiosk.id}`}
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

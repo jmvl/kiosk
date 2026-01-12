@@ -266,6 +266,23 @@ body {
   border-color: #667eea;
 }
 
+.clear-filters-btn {
+  padding: 10px 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  background: white;
+  cursor: pointer;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.clear-filters-btn:hover {
+  background: #f5f6fa;
+  border-color: #667eea;
+  color: #667eea;
+}
+
 /* ======================
    Tables
    ====================== */
