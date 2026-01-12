@@ -110,10 +110,28 @@ const translations: Record<Language, Record<string, string>> = {
   },
 };
 
+const LANGUAGE_STORAGE_KEY = 'kiosk_language';
+
 class LanguageService {
   private currentLanguage: Language = 'fr';
 
   constructor() {
+    this.loadLanguage();
+  }
+
+  /**
+   * Load language from storage or detect from browser
+   */
+  private loadLanguage(): void {
+    // First check localStorage for persisted preference
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored === 'fr' || stored === 'nl') {
+      this.currentLanguage = stored;
+      console.log(`[LanguageService] Loaded language from storage: ${stored}`);
+      return;
+    }
+
+    // Fall back to browser detection
     this.detectLanguage();
   }
 
@@ -131,6 +149,8 @@ class LanguageService {
       this.currentLanguage = 'fr';
     }
 
+    // Persist detected language
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, this.currentLanguage);
     console.log(`[LanguageService] Detected language: ${browserLang} -> ${this.currentLanguage}`);
     return this.currentLanguage;
   }
@@ -143,10 +163,11 @@ class LanguageService {
   }
 
   /**
-   * Set language manually
+   * Set language manually and persist to storage
    */
   setLanguage(lang: Language): void {
     this.currentLanguage = lang;
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
     console.log(`[LanguageService] Language set to: ${lang}`);
   }
 

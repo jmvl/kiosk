@@ -18,12 +18,27 @@ export interface KiosksPageProps {
 
 const ITEMS_PER_PAGE = 5;
 
+// Session storage keys for filter persistence
+const STORAGE_KEYS = {
+  search: 'kiosks_search',
+  status: 'kiosks_status',
+  page: 'kiosks_page',
+};
+
 export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
   const [kiosks, setKiosks] = useState<Kiosk[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [currentPage, setCurrentPage] = useState(1);
+  // Initialize from sessionStorage for persistence across navigation
+  const [searchTerm, setSearchTerm] = useState(() =>
+    sessionStorage.getItem(STORAGE_KEYS.search) || ''
+  );
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
+    sessionStorage.getItem(STORAGE_KEYS.status) || 'all'
+  );
+  const [currentPage, setCurrentPage] = useState(() => {
+    const stored = sessionStorage.getItem(STORAGE_KEYS.page);
+    return stored ? parseInt(stored, 10) : 1;
+  });
 
   useEffect(() => {
     const loadKiosks = async () => {
@@ -189,19 +204,25 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const paginatedKiosks = filteredKiosks.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters change and persist to sessionStorage
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
     setCurrentPage(1);
+    sessionStorage.setItem(STORAGE_KEYS.search, value);
+    sessionStorage.setItem(STORAGE_KEYS.page, '1');
   };
 
   const handleStatusChange = (value: string) => {
     setStatusFilter(value);
     setCurrentPage(1);
+    sessionStorage.setItem(STORAGE_KEYS.status, value);
+    sessionStorage.setItem(STORAGE_KEYS.page, '1');
   };
 
   const goToPage = (page: number) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    const newPage = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(newPage);
+    sessionStorage.setItem(STORAGE_KEYS.page, String(newPage));
   };
 
   if (isLoading) {

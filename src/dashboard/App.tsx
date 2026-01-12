@@ -87,6 +87,10 @@ function App() {
     setSelectedKioskId(undefined);
     // Clear hash on logout
     window.history.replaceState(null, '', window.location.pathname);
+    // Clear any stored session data
+    localStorage.removeItem('dashboard_user');
+    localStorage.removeItem('auth_token');
+    sessionStorage.clear();
   };
 
   const handleNavigate = useCallback((page: string, id?: string) => {

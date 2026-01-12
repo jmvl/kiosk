@@ -24,6 +24,7 @@ export function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
+  const [originalCampaign, setOriginalCampaign] = useState<Campaign | null>(null); // Track original for dirty check
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newCampaign, setNewCampaign] = useState<Partial<Campaign>>({
     name: '',
@@ -33,6 +34,32 @@ export function CampaignsPage() {
     targetKiosks: 1,
     adId: '',
   });
+
+  // Check if form has unsaved changes
+  const hasUnsavedChanges = useCallback(() => {
+    if (!editingCampaign || !originalCampaign) return false;
+    return (
+      editingCampaign.name !== originalCampaign.name ||
+      editingCampaign.status !== originalCampaign.status ||
+      editingCampaign.targetKiosks !== originalCampaign.targetKiosks ||
+      editingCampaign.startDate.getTime() !== originalCampaign.startDate.getTime() ||
+      editingCampaign.endDate.getTime() !== originalCampaign.endDate.getTime()
+    );
+  }, [editingCampaign, originalCampaign]);
+
+  // Warn before leaving page with unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges()) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Compute campaign status based on dates
   const computeStatus = useCallback((campaign: Campaign): Campaign['status'] => {
@@ -135,6 +162,7 @@ export function CampaignsPage() {
 
   const handleEdit = (campaign: Campaign) => {
     setEditingCampaign({ ...campaign });
+    setOriginalCampaign({ ...campaign }); // Store original for dirty checking
   };
 
   const handleSaveEdit = () => {
@@ -143,10 +171,17 @@ export function CampaignsPage() {
       prev.map((c) => (c.id === editingCampaign.id ? editingCampaign : c))
     );
     setEditingCampaign(null);
+    setOriginalCampaign(null);
   };
 
   const handleCancelEdit = () => {
+    if (hasUnsavedChanges()) {
+      if (!confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+        return;
+      }
+    }
     setEditingCampaign(null);
+    setOriginalCampaign(null);
   };
 
   // Create new campaign
