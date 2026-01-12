@@ -26,6 +26,7 @@ export function CampaignsPage() {
   const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [originalCampaign, setOriginalCampaign] = useState<Campaign | null>(null); // Track original for dirty check
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent double-click submission
   const [newCampaign, setNewCampaign] = useState<Partial<Campaign>>({
     name: '',
     status: 'draft',
@@ -185,7 +186,10 @@ export function CampaignsPage() {
   };
 
   // Create new campaign
-  const handleCreateCampaign = () => {
+  const handleCreateCampaign = async () => {
+    // Prevent double-click submission
+    if (isSubmitting) return;
+
     if (!newCampaign.name || !newCampaign.startDate || !newCampaign.endDate) {
       alert('Please fill in all required fields');
       return;
@@ -197,38 +201,47 @@ export function CampaignsPage() {
       return;
     }
 
-    const campaign: Campaign = {
-      id: `CAMP-${String(campaigns.length + 1).padStart(3, '0')}`,
-      name: newCampaign.name || '',
-      status: computeStatus({
-        ...newCampaign,
-        id: '',
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API delay (TODO: Replace with actual Convex mutation)
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const campaign: Campaign = {
+        id: `CAMP-${String(campaigns.length + 1).padStart(3, '0')}`,
         name: newCampaign.name || '',
-        status: 'scheduled',
-        impressions: 0,
-        createdBy: '',
+        status: computeStatus({
+          ...newCampaign,
+          id: '',
+          name: newCampaign.name || '',
+          status: 'scheduled',
+          impressions: 0,
+          createdBy: '',
+          startDate: newCampaign.startDate || new Date(),
+          endDate: newCampaign.endDate || new Date(),
+          targetKiosks: newCampaign.targetKiosks || 1,
+        }),
         startDate: newCampaign.startDate || new Date(),
         endDate: newCampaign.endDate || new Date(),
         targetKiosks: newCampaign.targetKiosks || 1,
-      }),
-      startDate: newCampaign.startDate || new Date(),
-      endDate: newCampaign.endDate || new Date(),
-      targetKiosks: newCampaign.targetKiosks || 1,
-      impressions: 0,
-      createdBy: 'current@user.be',
-      adId: newCampaign.adId,
-    };
+        impressions: 0,
+        createdBy: 'current@user.be',
+        adId: newCampaign.adId,
+      };
 
-    setCampaigns((prev) => [...prev, campaign]);
-    setShowCreateModal(false);
-    setNewCampaign({
-      name: '',
-      status: 'draft',
-      startDate: new Date(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      targetKiosks: 1,
-      adId: '',
-    });
+      setCampaigns((prev) => [...prev, campaign]);
+      setShowCreateModal(false);
+      setNewCampaign({
+        name: '',
+        status: 'draft',
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        targetKiosks: 1,
+        adId: '',
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Delete campaign
@@ -468,9 +481,9 @@ export function CampaignsPage() {
               </div>
             </div>
             <div className="modal-footer">
-              <button className="secondary-button" onClick={() => setShowCreateModal(false)}>Cancel</button>
-              <button className="primary-button" onClick={handleCreateCampaign} data-testid="create-campaign-submit">
-                Create Campaign
+              <button className="secondary-button" onClick={() => setShowCreateModal(false)} disabled={isSubmitting}>Cancel</button>
+              <button className="primary-button" onClick={handleCreateCampaign} data-testid="create-campaign-submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Creating...' : 'Create Campaign'}
               </button>
             </div>
           </div>

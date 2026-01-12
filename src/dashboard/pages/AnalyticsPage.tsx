@@ -1,5 +1,5 @@
 // Admin Dashboard - Analytics Page
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface AnalyticsData {
   totalPlays: number;
@@ -18,13 +18,51 @@ interface DailyStats {
 }
 
 type AnalyticsTab = 'overview' | 'daily' | 'kiosks';
+type DateRange = '7days' | '30days' | '90days';
+
+// Parse URL search params for filters
+const getParamsFromUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  const tab = params.get('tab') as AnalyticsTab | null;
+  const range = params.get('range') as DateRange | null;
+  return {
+    tab: ['overview', 'daily', 'kiosks'].includes(tab || '') ? tab : 'overview',
+    range: ['7days', '30days', '90days'].includes(range || '') ? range : '7days',
+  };
+};
+
+// Update URL with current filters
+const updateUrlParams = (tab: AnalyticsTab, range: DateRange) => {
+  const url = new URL(window.location.href);
+  url.searchParams.set('tab', tab);
+  url.searchParams.set('range', range);
+  window.history.replaceState(null, '', url.toString());
+};
 
 export function AnalyticsPage() {
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [dateRange, setDateRange] = useState('7days');
-  const [activeTab, setActiveTab] = useState<AnalyticsTab>('overview');
+
+  // Initialize from URL params
+  const initialParams = getParamsFromUrl();
+  const [dateRange, setDateRange] = useState<DateRange>(initialParams.range as DateRange);
+  const [activeTab, setActiveTab] = useState<AnalyticsTab>(initialParams.tab as AnalyticsTab);
+
+  // Sync URL when filters change
+  useEffect(() => {
+    updateUrlParams(activeTab, dateRange);
+  }, [activeTab, dateRange]);
+
+  // Handle tab change with URL update
+  const handleTabChange = useCallback((tab: AnalyticsTab) => {
+    setActiveTab(tab);
+  }, []);
+
+  // Handle date range change with URL update
+  const handleRangeChange = useCallback((range: DateRange) => {
+    setDateRange(range);
+  }, []);
 
   useEffect(() => {
     const loadAnalytics = async () => {
@@ -194,21 +232,21 @@ export function AnalyticsPage() {
       <div className="tabs-container">
         <button
           className={`tab-button ${activeTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveTab('overview')}
+          onClick={() => handleTabChange('overview')}
           data-testid="tab-overview"
         >
           Overview
         </button>
         <button
           className={`tab-button ${activeTab === 'daily' ? 'active' : ''}`}
-          onClick={() => setActiveTab('daily')}
+          onClick={() => handleTabChange('daily')}
           data-testid="tab-daily"
         >
           Daily Stats
         </button>
         <button
           className={`tab-button ${activeTab === 'kiosks' ? 'active' : ''}`}
-          onClick={() => setActiveTab('kiosks')}
+          onClick={() => handleTabChange('kiosks')}
           data-testid="tab-kiosks"
         >
           By Kiosk
@@ -219,7 +257,7 @@ export function AnalyticsPage() {
       <div className="filters-bar">
         <select
           value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
+          onChange={(e) => handleRangeChange(e.target.value as DateRange)}
           className="filter-select"
         >
           <option value="7days">Last 7 Days</option>
