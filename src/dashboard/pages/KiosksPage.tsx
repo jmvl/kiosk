@@ -269,6 +269,7 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
           value={searchTerm}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="search-input"
+          maxLength={100}
         />
         <select
           value={statusFilter}
@@ -349,6 +350,12 @@ export function KiosksPage({ onNavigateToKiosk }: KiosksPageProps) {
             ))}
           </tbody>
         </table>
+        {paginatedKiosks.length === 0 && (
+          <div className="empty-state" data-testid="empty-state">
+            <p>No kiosks found matching your filters.</p>
+            <p>Try adjusting your search or filters.</p>
+          </div>
+        )}
       </div>
 
       {/* Pagination */}

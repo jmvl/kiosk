@@ -550,6 +550,22 @@ body {
   color: #7f8c8d;
 }
 
+.empty-state {
+  padding: 60px 40px;
+  text-align: center;
+  color: #7f8c8d;
+}
+
+.empty-state p:first-child {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.empty-state p:last-child {
+  font-size: 14px;
+}
+
 /* ======================
    Questions Page
    ====================== */
