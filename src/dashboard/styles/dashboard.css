@@ -1563,3 +1563,106 @@ body {
 .kiosks-table tr:hover td {
   background-color: #f8f9fa;
 }
+
+/* ======================
+   Responsive Styles
+   ====================== */
+
+/* Tablet Layout (768px - 1024px) */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 200px;
+  }
+
+  .dashboard-main {
+    margin-left: 200px;
+  }
+
+  .brand-name {
+    font-size: 14px;
+  }
+
+  .nav-label {
+    font-size: 13px;
+  }
+}
+
+/* Small Tablet / Large Phone (< 768px) */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    transition: left 0.3s ease;
+    z-index: 1000;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .dashboard-main {
+    margin-left: 0;
+  }
+
+  .page-content {
+    padding: 16px;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .filters-bar {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
+  /* Show hamburger menu on mobile */
+  .mobile-menu-btn {
+    display: block;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    z-index: 999;
+    padding: 8px 12px;
+    background: #1e1e2d;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+  }
+}
+
+/* Hide mobile menu button on desktop */
+.mobile-menu-btn {
+  display: none;
+}
+
+/* Mobile Layout (< 480px) */
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .data-table {
+    font-size: 12px;
+  }
+
+  .action-button.small {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+}
