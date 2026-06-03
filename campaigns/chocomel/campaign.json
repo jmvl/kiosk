@@ -1,0 +1,78 @@
+{
+  "id": "chocomel-2026",
+  "slug": "chocomel",
+  "name": "Chocomel One and Only Spin",
+  "brandName": "Chocomel",
+  "gameTemplate": "spin-wheel",
+  "defaultLocale": "en",
+  "status": "draft",
+  "copy": {
+    "attractHeadline": "Experience the one and only chocolate taste sensation",
+    "attractSubheadline": "Insert a coin and spin for a Chocomel reward.",
+    "insertCoinCta": "Insert coin to spin",
+    "spinCta": "Spin the wheel",
+    "questionIntro": "Answer one quick Chocomel question.",
+    "prizeIntro": "Your Chocomel reward",
+    "resetMessage": "Enjoy the one and only Chocomel."
+  },
+  "theme": {
+    "primaryColor": "#FFD200",
+    "secondaryColor": "#5A2D0C",
+    "accentColor": "#FFF3B0",
+    "backgroundColor": "#2A1308",
+    "textColor": "#2A1308",
+    "fontFamily": "Inter, system-ui, sans-serif"
+  },
+  "assets": [
+    {
+      "id": "chocomel-logo-reference",
+      "type": "logo",
+      "label": "Chocomel logo reference",
+      "src": "https://www.frieslandcampina.com/uploads/2023/01/Logo_Chocomel-one-and-only_yellow-330x264.png",
+      "usage": "prototype-reference"
+    },
+    {
+      "id": "chocomel-can-reference",
+      "type": "product",
+      "label": "Chocomel can reference",
+      "src": "https://www.frieslandcampina.com/uploads/2023/01/GIRL-C2-F1_CAN_1440_0-470x438.webp",
+      "usage": "prototype-reference"
+    },
+    {
+      "id": "chocomel-pack-reference",
+      "type": "product",
+      "label": "Chocomel bottle and pack reference",
+      "src": "https://www.frieslandcampina.com/uploads/2023/01/BOXES-BOTTLE-F2_1120x964-330x330.webp",
+      "usage": "prototype-reference"
+    }
+  ],
+  "wheelSegments": [
+    { "id": "free-sample", "label": "Free sample", "prizeId": "free-sample", "assetId": "chocomel-can-reference", "color": "#FFD200", "weight": 10 },
+    { "id": "discount", "label": "Discount", "prizeId": "discount", "assetId": "chocomel-pack-reference", "color": "#5A2D0C", "weight": 20 },
+    { "id": "warm-chocomel", "label": "Warm Chocomel", "prizeId": "warm-chocomel", "color": "#FFF3B0", "weight": 15 },
+    { "id": "try-again", "label": "Try again", "prizeId": "try-again", "color": "#8B4A14", "weight": 55 }
+  ],
+  "questions": [
+    {
+      "id": "since-1932",
+      "locale": "en",
+      "prompt": "Since which year has Chocomel been known for its chocolate flavoured milk?",
+      "options": [
+        { "key": "a", "label": "1932" },
+        { "key": "b", "label": "1958" },
+        { "key": "c", "label": "1984" }
+      ],
+      "correctAnswerKey": "a"
+    }
+  ],
+  "prizes": [
+    { "id": "free-sample", "name": "Free sample", "description": "Voucher for a Chocomel sample.", "printLabel": "Free Chocomel sample" },
+    { "id": "discount", "name": "Discount", "description": "Discount voucher for Chocomel.", "printLabel": "Chocomel discount voucher" },
+    { "id": "warm-chocomel", "name": "Warm Chocomel", "description": "A warm Chocomel treat option.", "printLabel": "Warm Chocomel reward" },
+    { "id": "try-again", "name": "Try again", "description": "Consolation result.", "printLabel": "Thanks for playing" }
+  ],
+  "legalNotes": [
+    "Prototype assets are public-page references only; production usage requires rights approval.",
+    "Prize selection must be enforced by the local backend, not only by frontend animation."
+  ]
+}

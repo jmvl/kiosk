@@ -1,0 +1,24 @@
+{
+  "name": "retail-kiosk-activation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Reusable campaign-driven retail kiosk activation platform.",
+  "type": "module",
+  "scripts": {
+    "dev": "pnpm --parallel --filter @retail-kiosk/kiosk-player --filter @retail-kiosk/local-backend dev",
+    "dev:kiosk": "pnpm --filter @retail-kiosk/kiosk-player dev",
+    "dev:backend": "pnpm --filter @retail-kiosk/local-backend dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.12",
+    "typescript": "^5.5.4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.6.0"
+}
