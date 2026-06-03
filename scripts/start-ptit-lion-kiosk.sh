@@ -60,6 +60,14 @@ fi
 
 if [ "$RESTART_FIREFOX" = "1" ]; then
   pkill -u "$(id -un)" -f "firefox.*${PORT}|firefox-esr.*${PORT}" 2>/dev/null || true
+  pkill -u "$(id -un)" -x firefox 2>/dev/null || true
+  pkill -u "$(id -un)" -x firefox-bin 2>/dev/null || true
+  for _ in $(seq 1 40); do
+    if ! pgrep -u "$(id -un)" -x firefox >/dev/null 2>&1 && ! pgrep -u "$(id -un)" -x firefox-bin >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.25
+  done
 fi
 
 if command -v firefox >/dev/null 2>&1; then
