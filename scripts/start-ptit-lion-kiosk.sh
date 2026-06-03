@@ -25,8 +25,9 @@ fi
 
 if [ "$RESTART_SERVER" = "1" ]; then
   pkill -u "$(id -un)" -f "ptit_lion_server.py .*--port ${PORT}" 2>/dev/null || true
+  pkill -u "$(id -un)" -f "server.py .*--port ${PORT}" 2>/dev/null || true
   for _ in $(seq 1 40); do
-    if ! pgrep -u "$(id -un)" -f "ptit_lion_server.py .*--port ${PORT}" >/dev/null 2>&1; then
+    if ! pgrep -u "$(id -un)" -f "ptit_lion_server.py .*--port ${PORT}|server.py .*--port ${PORT}" >/dev/null 2>&1; then
       break
     fi
     sleep 0.25
