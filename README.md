@@ -1,90 +1,84 @@
-# Kiosk - Gamified Supermarket Kiosk (Phase 0 MVP)
+# P'tit Lion Kiosk
 
-Loyalty Arcade promotional kiosk with slot machine gameplay.
+Browser-first arcade fortune kiosk for the Linux Mint machine at `192.168.1.117`.
 
-## Prerequisites
+This repo replaces the old Electron slot-machine MVP with:
 
-- Node.js 18+
-- npm or yarn
-- Convex account (for backend)
+- Vite + React fullscreen kiosk UI
+- PixiJS for the animated wheel, lions, particles, and WebGL/canvas graphics
+- GSAP for spin and reveal timelines
+- Python hardware bridge for coin slot, barcode scanner, and thermal printer
+- Firefox kiosk mode on Linux
 
-## Quick Start
+## Hardware
+
+Known kiosk devices:
+
+```text
+Coin slot: /dev/serial/by-id/usb-1a86_USB_Serial-if00-port0
+Scanner:   /dev/input/by-id/usb-usbd_USB_HID_KEYBOARD_000000-event-kbd
+Printer:   CUPS queue ICOD-PT80KM
+```
+
+The kiosk user must be in:
+
+```text
+dialout  # coin serial
+input    # scanner evdev
+lpadmin  # printer administration
+```
+
+## Development
+
+Install dependencies:
 
 ```bash
-# Install dependencies
 npm install
-
-# Start Convex backend (in terminal 1)
-npx convex dev
-
-# Start development server (in terminal 2)
-npm run dev
-
-# Start Electron with hot reload
-npm run electron:dev
 ```
 
-## Environment Variables
-
-Already configured in `.env.development`:
+Run the frontend:
 
 ```bash
-VITE_CONVEX_URL=https://clear-salmon-146.convex.site
-VITE_KIOSK_ID=kiosk-001
-VITE_LANGUAGE=fr
+npm run dev
 ```
 
-## Scripts
+Run the hardware bridge in another terminal:
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start Vite dev server |
-| `npm run electron:dev` | Start Electron with hot reload |
-| `npm run build` | Build for production |
-| `npm run package` | Package Electron app for Linux |
-| `npm run test` | Run unit tests |
-| `npm run convex` | Start Convex backend |
-
-## Project Structure
-
-```
-src/
-├── main/              # Electron main process
-│   ├── index.ts       # Entry point
-│   └── preload.ts     # Security bridge
-├── renderer/          # React frontend
-│   ├── components/    # UI components
-│   ├── hooks/         # React hooks
-│   ├── services/      # Business logic
-│   └── utils/         # Utilities
-└── shared/            # Shared types
+```bash
+python3 hardware/ptit_lion_server.py --no-coin-monitor --no-scanner-monitor
 ```
 
-## Architecture
+The frontend defaults to `http://localhost:8787` for hardware events during Vite development.
 
-- **Frontend**: React + Vite
-- **Container**: Electron (Linux kiosk mode)
-- **Backend**: Convex (real-time cloud)
-- **Storage**: IndexedDB (offline queue)
-- **Hardware**: Keyboard events (coin, printer)
+Test event endpoints:
 
-## Development Status
+```bash
+curl 'http://localhost:8787/api/simulate-coin'
+curl 'http://localhost:8787/api/simulate-scan?payload=2504711954'
+```
 
-**Phase 0 MVP** - Ready for implementation
+A scanner payload ending in `954` greets Jean-Michel and starts a free member spin.
 
-- ✅ Project scaffolding complete
-- ✅ Convex schema defined
-- ✅ Directory structure created
-- ✅ Base services and hooks skeleton
-- 🚧 Ready to begin Epic 1 Story 1
+## Production Kiosk
 
-## Documentation
+Build and serve the app through the hardware bridge:
 
-See `_bmad-output/planning-artifacts/` for:
-- **architecture.md** - Complete technical architecture
-- **epics.md** - 31 user stories across 6 epics
-- **analysis/initial-prd.md** - Product requirements
+```bash
+npm run kiosk
+```
 
-## License
+On the Linux kiosk, use:
 
-MIT
+```bash
+scripts/start-ptit-lion-kiosk.sh
+```
+
+The launcher:
+
+- builds `dist/` if missing
+- starts `hardware/ptit_lion_server.py` on port `8787`
+- opens Firefox in kiosk mode at `http://127.0.0.1:8787`
+
+## Current Direction
+
+Use `rgbKineticSlider` as visual inspiration only. The actual kiosk engine is PixiJS + GSAP so the app can control real-time hardware events, prize state, scan/member flows, and thermal printing reliably.

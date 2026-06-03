@@ -19,6 +19,5 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
-  // Optimize for Electron
   base: './',
 });

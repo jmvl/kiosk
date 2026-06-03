@@ -28,5 +28,5 @@
     }
   },
   "include": ["src/renderer", "src/shared"],
-  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.electron.json" }]
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
