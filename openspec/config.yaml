@@ -1,0 +1,20 @@
+schema: spec-driven
+context: |
+  Retail Kiosk Activation Platform repo.
+
+  Business goal: build a reusable, campaign-driven, remotely managed kiosk fleet platform for 10 to 100+ retail kiosks.
+
+  Product principles:
+  - Local-first operation: kiosks continue running active cached campaigns during internet outages.
+  - Fleet-managed hardware: each kiosk has durable identity, serial number, human-readable name, assigned location, status, versions, campaign state, and GPS telemetry when available.
+  - Campaign-driven runtime: brands and promotions are versioned campaign packages, not forks of core runtime code.
+  - Audit-friendly operations: paid sessions, prize decisions, print actions, sync state, and remote commands are recorded.
+  - Remote recovery: operators can issue safe remote commands and restore a kiosk to a known-good snapshot without destroying unsynced event data.
+
+  Current target stack: TypeScript/pnpm monorepo; Vite/React kiosk player; Fastify/Zod/SQLite local runtime API; Fastify/PostgreSQL central API; Vite/React admin dashboard; Docker Compose, Caddy, systemd, GitHub Actions.
+rules:
+  specs:
+    - Requirements must use SHALL or MUST so `openspec validate` accepts them.
+    - Each requirement should include at least one GIVEN/WHEN/THEN scenario.
+  tasks:
+    - Use markdown checkboxes for concrete implementation tasks so OpenSpec task status is meaningful.
