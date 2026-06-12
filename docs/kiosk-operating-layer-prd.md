@@ -747,7 +747,7 @@ kiosk-platform/
 | Token input | Node SerialPort | Go/Rust adapter if needed |
 | Printer | CUPS + ESC/POS | Same |
 | Kiosk agent | TypeScript for speed | Go single binary |
-| Central API | Fastify or NestJS | Same; scale horizontally |
+| Central API | Fastify or NestJS + Drizzle | Same; scale horizontally |
 | Central DB | PostgreSQL | PostgreSQL + read replicas if needed |
 | Object storage | S3-compatible | CDN/object storage |
 | Commands | REST polling | MQTT/NATS for fleet |
@@ -903,7 +903,14 @@ Architecture and developer reviews are complete. Both reviews found the directio
 
 This v0.2 PRD incorporates the required architecture/developer review corrections as implementation guardrails. The next step is **JM review of the orchestrator plan**, then Kanban creation after approval.
 
-No implementation should start until the reviewed PRD and orchestrator task graph are accepted.
+Decision gates D1–D3 are now resolved in `docs/implementation-addendum-v1.md`. That addendum is the implementation handoff overlay for I1+ cards and locks:
+
+- Drizzle ORM + `drizzle-kit` for local SQLite and central PostgreSQL migrations;
+- fake hardware flow first, with CH340 serial/CUPS PT80KM support later behind HAL interfaces;
+- per-kiosk HMAC ticket signing, pilot SHA-256 package checksums, and production Ed25519 manifest signatures;
+- an additional physical hardware evidence gate before claiming real hardware readiness.
+
+No implementation should start until the reviewed PRD, orchestrator task graph, and `docs/implementation-addendum-v1.md` are accepted.
 
 ---
 
@@ -1021,14 +1028,14 @@ Recommended format:
 Example:
 
 ```text
-CHO-HQ001-01JABCDEF123-7K9P
+CHO-HQ001-01JABCDEF123-7K9P2Q
 ```
 
 ### Requirements
 
 - `ticket_id` is a ULID generated locally.
 - `ticket_code` includes kiosk/campaign prefix for human support.
-- HMAC/check segment prevents casual forgery.
+- HMAC/check segment prevents casual forgery; first pilot uses a 6-character Crockford/base32 check, with 10–12 characters or online validation for higher-value campaigns.
 - Local runtime, not package, creates final redeemable ticket code.
 - Package may propose display content; runtime signs/normalizes redeemable code.
 - Central DB enforces uniqueness on `ticket_code` and `(kiosk_id, ticket_id)`.
@@ -1247,7 +1254,7 @@ Recommended v1 toolchain:
 - TypeScript.
 - Vite for player/dashboard.
 - Fastify for local runtime and central API.
-- Drizzle or Kysely for typed SQL; final choice should be locked before implementation.
+- Drizzle ORM + `drizzle-kit` for typed SQL and generated/reviewed migrations; D1 resolved this choice before implementation.
 - Vitest for unit tests.
 - Playwright for browser/player smoke tests.
 
@@ -1260,8 +1267,14 @@ pnpm lint
 pnpm test
 pnpm build
 pnpm package:validate
+pnpm db:generate:local
+pnpm db:generate:central
+pnpm db:check:local
+pnpm db:check:central
 pnpm db:migrate:local
 pnpm db:migrate:central
+pnpm db:studio:local
+pnpm db:studio:central
 pnpm dev:runtime
 pnpm dev:player
 pnpm dev:central

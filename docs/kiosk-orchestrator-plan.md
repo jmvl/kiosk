@@ -1,9 +1,10 @@
 # Kiosk Operating Layer — Orchestrator Plan
 
-> **Status:** Ready for JM review. Do not create Kanban or start implementation until JM approves this graph.  
-> **Source PRD:** `/home/ubuntu/docs/kiosk-operating-layer-prd.md`  
+> **Status:** Updated after D1–D3; S1 implementation addendum ready for implementation handoff.  
+> **Source PRD:** `/home/ubuntu/projects/retail-kiosk-activation/docs/kiosk-operating-layer-prd.md`  
+> **Implementation addendum:** `/home/ubuntu/projects/retail-kiosk-activation/docs/implementation-addendum-v1.md`  
 > **Reviewed by:** architecture agent + developer agent  
-> **Review result:** Approved for orchestrator/Kanban planning; not approved for implementation until JM accepts this plan.
+> **Review result:** Approved for orchestrator/Kanban planning; implementation cards must use S1 addendum as the resolved-decision overlay.
 
 ---
 
@@ -60,8 +61,9 @@ ORCH: Kiosk operating layer MVP from reviewed PRD
 
 Root card body should include:
 
-- canonical PRD path: `/home/ubuntu/docs/kiosk-operating-layer-prd.md`;
-- this orchestrator plan path: `/home/ubuntu/docs/kiosk-orchestrator-plan.md`;
+- canonical PRD path: `/home/ubuntu/projects/retail-kiosk-activation/docs/kiosk-operating-layer-prd.md`;
+- implementation addendum path: `/home/ubuntu/projects/retail-kiosk-activation/docs/implementation-addendum-v1.md`;
+- this orchestrator plan path: `/home/ubuntu/projects/retail-kiosk-activation/docs/kiosk-orchestrator-plan.md`;
 - “no implementation before JM approval” constraint;
 - architecture/developer review results;
 - profile list;
@@ -105,6 +107,7 @@ T0 ORCH root
   │
   ├── I9 Device/systemd/kiosk-mode deployment scaffold
   │     └── O1 Ops review
+  │           └── O0 Physical hardware evidence spike
   │
   ├── I10 Real hardware adapters
   │     └── Q4 Physical HQ hardware checklist
@@ -164,7 +167,7 @@ T0 ORCH root
 - **Assignee:** `coder`
 - **Parents:** S1.
 - **Objective:** create monorepo skeleton and CI baseline only.
-- **Files:** root `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, lint/test/build config, CI workflow.
+- **Files:** root `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, lint/test/build config, CI workflow, Drizzle root scripts from S1 addendum.
 - **Acceptance:** `pnpm install`, `pnpm typecheck`, `pnpm test`, `pnpm build` run with empty/skeleton packages.
 
 ### R1 — Review Repo/Tooling
@@ -235,8 +238,8 @@ T0 ORCH root
 ### I6 — Central API + Event Ingest
 
 - **Assignee:** `coder`
-- **Parents:** R2, D1.
-- **Objective:** PostgreSQL migrations, heartbeat, idempotent event batch ingest, command routes skeleton.
+- **Parents:** R2, S1.
+- **Objective:** PostgreSQL Drizzle migrations, heartbeat, idempotent event batch ingest, command routes skeleton.
 - **Acceptance:** duplicate event upload is idempotent; heartbeat stored.
 
 ### R4 — Review Central API/Sync
@@ -247,8 +250,8 @@ T0 ORCH root
 ### I7 — Kiosk Agent Heartbeat + Commands
 
 - **Assignee:** `coder`
-- **Parents:** I6, D3.
-- **Objective:** identity, heartbeat, command polling, command safety allowlist, result reporting.
+- **Parents:** I6, S1.
+- **Objective:** identity, heartbeat, command polling, command safety allowlist, result reporting, and ticket/package policy integration points from S1.
 - **Acceptance:** fake command lifecycle works; no arbitrary shell execution.
 
 ### R5 — Review Agent/Command Safety
@@ -275,8 +278,8 @@ T0 ORCH root
 ### I9 — Device/systemd/Kiosk Mode Scaffold
 
 - **Assignee:** `ops`
-- **Parents:** I1, D2.
-- **Objective:** systemd units, Chromium kiosk launch, log paths, Tailscale notes, health checks.
+- **Parents:** I1, S1.
+- **Objective:** systemd units, Chromium kiosk launch, log paths, Tailscale notes, health checks, and configurable CH340/CUPS assumptions from S1.
 - **Acceptance:** runbook can boot services on target Linux environment.
 
 ### O1 — Ops Review
@@ -284,11 +287,18 @@ T0 ORCH root
 - **Assignee:** `roger` or `ops` self-review plus `roger` audit if code/config changes.
 - **Parents:** I9.
 
+### O0 — Physical Hardware Evidence Spike
+
+- **Assignee:** `ops`
+- **Parents:** O1.
+- **Objective:** capture HQ/operator evidence before real hardware adapter claims: serial detection, token raw hex, CUPS queue/test print, paper profile, kiosk browser boot, service restart, offline flow, Tailscale, rollback, and monitoring.
+- **Acceptance:** evidence bundle or documented blocker; if hardware is unavailable, block I10/Q4 rather than guessing.
+
 ### I10 — Real Hardware Adapters
 
 - **Assignee:** `coder`
-- **Parents:** I4, D2, O1.
-- **Objective:** Serial token adapter and CUPS/ESC/POS printer adapter behind existing interfaces.
+- **Parents:** I4, O0.
+- **Objective:** Serial token adapter and CUPS printer adapter behind existing interfaces; keep direct ESC/POS/raw as optional spike unless O0 proves it is required.
 - **Acceptance:** hardware-specific tests or documented hardware-in-loop evidence.
 
 ### Q4 — Physical HQ Hardware Checklist
@@ -317,7 +327,7 @@ The orchestrator card must include these rules:
 
 1. No implementation before JM approves this plan.
 2. No UI polish before fake hardware E2E passes.
-3. No real hardware card before hardware baseline is confirmed.
+3. No real hardware adapter card before O0 physical hardware evidence is captured or explicitly blocked.
 4. No direct package execution outside sandboxed iframe.
 5. No central sync dependency in customer session flow.
 6. No arbitrary shell command remote execution.
@@ -342,15 +352,12 @@ Status: blocked until explicit approval to fan out
 
 Then, when JM says “proceed,” unblock the root. The orchestrator creates D1–D3 and S1 first, then proceeds according to dependencies.
 
+D1–D3 and S1 have now produced decision artifacts. Deeper implementation cards should use `docs/implementation-addendum-v1.md` as required input, and real hardware work should include the new O0 physical evidence spike before I10/Q4.
+
 ---
 
 ## 8. Current Recommendation
 
-This plan is ready for JM review.
+This plan is ready for implementation-card creation after JM approval and should be read together with `docs/implementation-addendum-v1.md`.
 
-I recommend **not** creating the full Kanban graph yet. First get JM approval on:
-
-1. the reviewed PRD as source of truth;
-2. the orchestrator task graph;
-3. the early decision gates;
-4. the rule that implementation starts only after S1 resolves ORM/hardware/key-policy decisions.
+I recommend proceeding with I1/R1 and fake-flow implementation cards once approved. Do **not** dispatch I10/Q4 until O0 captures physical hardware evidence or records a concrete hardware blocker.
