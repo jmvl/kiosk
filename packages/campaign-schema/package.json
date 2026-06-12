@@ -1,14 +1,16 @@
 {
   "name": "@retail-kiosk/campaign-schema",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.0.0",
+  "description": "campaign schema package skeleton.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "lint": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test dist/**/*.test.js || true"
+    "test": "node --test test/smoke.test.mjs"
   }
 }

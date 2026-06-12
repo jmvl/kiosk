@@ -1,24 +1,29 @@
 {
   "name": "retail-kiosk-activation",
-  "version": "0.1.0",
+  "version": "0.0.0",
   "private": true,
-  "description": "Reusable campaign-driven retail kiosk activation platform.",
+  "description": "Retail kiosk activation monorepo skeleton.",
   "type": "module",
+  "packageManager": "pnpm@9.6.0",
+  "engines": {
+    "node": ">=22 <23",
+    "pnpm": ">=9 <10"
+  },
   "scripts": {
-    "dev": "pnpm --parallel --filter @retail-kiosk/kiosk-player --filter @retail-kiosk/local-backend dev",
-    "dev:kiosk": "pnpm --filter @retail-kiosk/kiosk-player dev",
-    "dev:backend": "pnpm --filter @retail-kiosk/local-backend dev",
-    "build": "pnpm -r build",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "build": "pnpm -r --sort build",
+    "typecheck": "pnpm -r --sort typecheck",
+    "test": "pnpm -r --sort test",
+    "ci": "pnpm install --frozen-lockfile && pnpm typecheck && pnpm test && pnpm build",
+    "db:generate:local": "drizzle-kit generate --config services/local-backend/drizzle.local.config.ts",
+    "db:generate:central": "drizzle-kit generate --config services/central-api/drizzle.central.config.ts",
+    "db:check:local": "drizzle-kit check --config services/local-backend/drizzle.local.config.ts",
+    "db:check:central": "drizzle-kit check --config services/central-api/drizzle.central.config.ts",
+    "db:migrate:local": "tsx services/local-backend/src/db/migrate-local.ts",
+    "db:migrate:central": "tsx services/central-api/src/db/migrate-central.ts",
+    "db:studio:local": "drizzle-kit studio --config services/local-backend/drizzle.local.config.ts",
+    "db:studio:central": "drizzle-kit studio --config services/central-api/drizzle.central.config.ts"
   },
   "devDependencies": {
-    "@types/node": "^20.14.12",
-    "typescript": "^5.5.4"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "packageManager": "pnpm@9.6.0"
+    "typescript": "^5.9.3"
+  }
 }

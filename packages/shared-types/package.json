@@ -1,7 +1,7 @@
 {
-  "name": "@retail-kiosk/kiosk-player",
+  "name": "@retail-kiosk/shared-types",
   "version": "0.0.0",
-  "description": "kiosk player app skeleton.",
+  "description": "shared types package skeleton.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,6 +12,5 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --test test/smoke.test.mjs"
-  },
-  "private": true
+  }
 }

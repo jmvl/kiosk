@@ -1,5 +1,5 @@
 export const skeletonPackage = {
-  name: '@retail-kiosk/campaign-schema',
+  name: '@retail-kiosk/shared-types',
   kind: 'package',
 } as const;
 

@@ -1,6 +1,6 @@
 export const skeletonPackage = {
-  name: '@retail-kiosk/campaign-schema',
-  kind: 'package',
+  name: '@retail-kiosk/central-api',
+  kind: 'service',
 } as const;
 
 export type SkeletonPackage = typeof skeletonPackage;

@@ -1,7 +1,7 @@
 {
-  "name": "@retail-kiosk/kiosk-player",
+  "name": "@retail-kiosk/kiosk-agent",
   "version": "0.0.0",
-  "description": "kiosk player app skeleton.",
+  "description": "kiosk agent service skeleton.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
