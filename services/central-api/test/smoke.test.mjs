@@ -7,6 +7,6 @@ describe('@retail-kiosk/central-api skeleton', () => {
     assert.equal(packageJson.name, '@retail-kiosk/central-api');
     assert.equal(packageJson.scripts.build, 'tsc -p tsconfig.build.json');
     assert.equal(packageJson.scripts.typecheck, 'tsc -p tsconfig.json --noEmit');
-    assert.equal(packageJson.scripts.test, 'node --test test/smoke.test.mjs');
+    assert.equal(packageJson.scripts.test, 'pnpm build && node --test test/*.test.mjs');
   });
 });

@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "package_id": "chocomel-wheel",
+  "version": "1.0.0",
+  "display_name": "Chocomel Prize Wheel",
+  "campaign_short_code": "CHO",
+  "runtime_contract_version": "1",
+  "min_runtime_version": "0.1.0",
+  "min_player_version": "0.1.0",
+  "orientation": "landscape",
+  "resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bridge_capabilities": [
+    "recordTelemetry",
+    "requestPrint",
+    "complete",
+    "fail",
+    "getScheduleContext",
+    "getRuntimeCapabilities"
+  ],
+  "entrypoint": "module/index.html",
+  "files": [
+    {
+      "path": "module/index.html",
+      "size_bytes": 3609,
+      "sha256": "5d77ea6fec210e4462e524716d09d00e8d02c96d2251e683b957c0c6ff5871ac",
+      "media_type": "text/html",
+      "role": "entrypoint"
+    },
+    {
+      "path": "assets/brand.txt",
+      "size_bytes": 53,
+      "sha256": "48926d83f6e7b32f9a1ba7173acc9aee829812876612f258a19d69e789a9ecee",
+      "media_type": "text/plain",
+      "role": "asset"
+    },
+    {
+      "path": "ticket-template/template.txt",
+      "size_bytes": 73,
+      "sha256": "ecc66184e63482857c2d0ace6cc1efe7ed222e385046895ee2a7eab3265a1213",
+      "media_type": "text/plain",
+      "role": "ticket_template"
+    }
+  ],
+  "ticket_template": {
+    "path": "ticket-template/template.txt",
+    "qr_enabled": true
+  },
+  "package_size_limit_bytes": 262144000
+}

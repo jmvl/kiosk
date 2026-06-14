@@ -1,7 +1,7 @@
 {
   "name": "@retail-kiosk/kiosk-player",
   "version": "0.0.0",
-  "description": "kiosk player app skeleton.",
+  "description": "React/Vite fullscreen kiosk player for the local runtime.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,9 +9,23 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc -p tsconfig.build.json && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test test/smoke.test.mjs"
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@retail-kiosk/shared-types": "workspace:*",
+    "@vitejs/plugin-react": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "typescript": "^5.9.3",
+    "vite": "latest"
+  },
+  "devDependencies": {
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "jsdom": "^29.1.1"
   },
   "private": true
 }

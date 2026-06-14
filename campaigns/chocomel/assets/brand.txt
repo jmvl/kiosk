@@ -1,0 +1,1 @@
+Chocomel brand fixture asset for package validation.

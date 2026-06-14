@@ -1,6 +1,13 @@
-export const skeletonPackage = {
-  name: '@retail-kiosk/campaign-schema',
-  kind: 'package',
-} as const;
+export type {
+  BridgeCapability,
+  PackageManifest,
+  PackageManifestFile,
+  PackageOrientation,
+} from './manifest.js';
+export type { PackageManifestValidationResult, ValidationIssue } from './validate.js';
 
-export type SkeletonPackage = typeof skeletonPackage;
+export {
+  packageManifestRequiredFields,
+  packageManifestSchemaVersion,
+} from './manifest.js';
+export { validatePackageManifest } from './validate.js';

@@ -1,6 +1,24 @@
-export const skeletonPackage = {
-  name: '@retail-kiosk/local-backend',
-  kind: 'service',
-} as const;
+export { skeletonPackage } from './skeleton.js';
+export type { SkeletonPackage } from './skeleton.js';
 
-export type SkeletonPackage = typeof skeletonPackage;
+export { migrateDatabase, migrationName, runtimeCoreMigrationSql } from './db/migrations.js';
+export { applySqlitePolicy, defaultLocalDatabasePath, openLocalDatabase, resolveLocalDatabasePath } from './db/sqlite.js';
+export type { LocalDatabase, OpenLocalDatabaseOptions } from './db/sqlite.js';
+export * as localSchema from './db/schema.js';
+export { appendEvent } from './events.js';
+export type { AppendEventInput } from './events.js';
+export { createSession, getSession, transitionSession, allowedTransitions } from './session.js';
+export type { CreateSessionInput, TransitionSessionOptions } from './session.js';
+export { activeRuntimeModule, activatePendingScheduleAtSafeBoundary, getSchedule, listSchedules, readRuntimeScheduler, updateDraftSchedule, ScheduleConflictError, ScheduleValidationError } from './schedules.js';
+export type { RuntimeModuleSnapshot, RuntimeSchedulerSnapshot, ScheduleDraftInput, ScheduleSnapshot, ScheduleSlotDraft, ScheduleSlotSnapshot } from './schedules.js';
+export { listGameRunLog } from './game-runs.js';
+export type { GameRunLogEntry } from './game-runs.js';
+export { canonicalTicketPayload, createTicket, defaultTicketSecretPath, loadTicketSecret, ticketCheck } from './tickets.js';
+export type { CreateTicketInput } from './tickets.js';
+export { crockfordFromBytes, generateUlid } from './ids.js';
+export { CupsPrinterAdapter, FakePrinterAdapter, FakeTokenAdapter, SerialTokenAdapter } from './hardware.js';
+export type { AdapterHealth, CupsCommandRunner, CupsPrinterAdapterConfig, NormalizedTokenEvent, PrinterAdapter, PrintResult, SerialCommandRunner, SerialTokenAdapterConfig, TokenAdapter } from './hardware.js';
+export { createLocalBackendRuntime, createLocalBackendServer, localBackendConfigFromEnv, startLocalBackendServer } from './server.js';
+export type { LocalBackendConfig, LocalBackendRuntime } from './server.js';
+export { collectAdminTelemetry, defaultCommandRunner, parseDefaultRoute, parseDfPk, parseLpstatPrinters, parsePortListeners, parseSystemctlShow, parseWifiLink } from './telemetry.js';
+export type { AdminTelemetry, CommandResult, CommandRunner, TelemetryOptions } from './telemetry.js';

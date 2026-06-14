@@ -1,0 +1,7 @@
+# Retail kiosk CH340 USB serial token input template.
+# Install as /etc/udev/rules.d/99-retail-kiosk-ch340.rules after confirming O0 evidence.
+# Baseline from D2: CH340 USB serial adapter USB ID 1a86:7523 using ch341 driver.
+# This creates /dev/retail-kiosk-token and grants group access.
+# Replace or add ATTRS{serial} when the actual device exposes a unique serial.
+
+SUBSYSTEM=="tty", ATTRS{idVendor}=="1a86", ATTRS{idProduct}=="7523", SYMLINK+="retail-kiosk-token", GROUP="kiosk-runtime", MODE="0660", TAG+="systemd", ENV{SYSTEMD_WANTS}+="retail-kiosk-local-backend.service"

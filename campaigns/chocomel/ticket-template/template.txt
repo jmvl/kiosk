@@ -1,0 +1,3 @@
+Ticket: {{ticket_code}}
+Prize: {{prize_name}}
+Show this ticket to staff.

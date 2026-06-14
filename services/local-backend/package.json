@@ -1,7 +1,7 @@
 {
   "name": "@retail-kiosk/local-backend",
   "version": "0.0.0",
-  "description": "local backend service skeleton.",
+  "description": "Local backend runtime core for kiosk sessions, events, tickets, and sync outbox.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +11,15 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test test/smoke.test.mjs"
+    "test": "pnpm build && node --test test/*.test.mjs",
+    "start": "node dist/cli.js"
   },
-  "private": true
+  "private": true,
+  "dependencies": {
+    "@fastify/websocket": "^11.2.0",
+    "@retail-kiosk/shared-types": "workspace:*",
+    "better-sqlite3": "^12.10.0",
+    "drizzle-orm": "^0.45.2",
+    "fastify": "^5.8.5"
+  }
 }

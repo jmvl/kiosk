@@ -1,16 +1,21 @@
 {
   "name": "@retail-kiosk/campaign-schema",
   "version": "0.0.0",
-  "description": "campaign schema package skeleton.",
+  "description": "Activation package manifest schema and validator.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "retail-kiosk-package-validate": "scripts/validate-manifest.mjs"
+  },
   "files": [
-    "dist"
+    "dist",
+    "scripts"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test test/smoke.test.mjs"
+    "test": "pnpm build && node --test test/*.test.mjs",
+    "package:validate": "pnpm build && node scripts/validate-manifest.mjs ../../campaigns/chocomel/manifest.json --root ../../campaigns/chocomel"
   }
 }

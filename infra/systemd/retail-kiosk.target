@@ -1,0 +1,9 @@
+# Template: install as /etc/systemd/system/retail-kiosk.target
+[Unit]
+Description=Retail Kiosk Runtime Target
+Wants=retail-kiosk-local-backend.service retail-kiosk-agent.service retail-kiosk-browser.service
+After=network-online.target graphical.target
+AllowIsolate=yes
+
+[Install]
+WantedBy=multi-user.target

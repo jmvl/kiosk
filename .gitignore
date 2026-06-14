@@ -1,5 +1,6 @@
 node_modules/
 dist/
+dist-web/
 build/
 coverage/
 .env
@@ -11,3 +12,6 @@ coverage/
 .local/
 ._*
 .scarf/
+.codex/
+qa-artifacts/
+test-results/

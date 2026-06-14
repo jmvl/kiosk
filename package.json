@@ -14,6 +14,7 @@
     "typecheck": "pnpm -r --sort typecheck",
     "test": "pnpm -r --sort test",
     "ci": "pnpm install --frozen-lockfile && pnpm typecheck && pnpm test && pnpm build",
+    "package:validate": "pnpm --filter @retail-kiosk/campaign-schema build && node packages/campaign-schema/scripts/validate-manifest.mjs campaigns/chocomel/manifest.json --root campaigns/chocomel",
     "db:generate:local": "drizzle-kit generate --config services/local-backend/drizzle.local.config.ts",
     "db:generate:central": "drizzle-kit generate --config services/central-api/drizzle.central.config.ts",
     "db:check:local": "drizzle-kit check --config services/local-backend/drizzle.local.config.ts",
@@ -24,6 +25,10 @@
     "db:studio:central": "drizzle-kit studio --config services/central-api/drizzle.central.config.ts"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.9.3",
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.22.4",
     "typescript": "^5.9.3"
   }
 }

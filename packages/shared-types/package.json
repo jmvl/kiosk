@@ -1,7 +1,7 @@
 {
   "name": "@retail-kiosk/shared-types",
   "version": "0.0.0",
-  "description": "shared types package skeleton.",
+  "description": "Shared TypeScript contracts for kiosk runtime, agent, hardware, and central API.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,6 +11,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test test/smoke.test.mjs"
+    "test": "pnpm build && node --test test/*.test.mjs"
   }
 }

@@ -1,0 +1,34 @@
+# Template: install as /etc/systemd/system/retail-kiosk-local-backend.service
+# Edit User/Group/WorkingDirectory if the target kiosk uses different paths.
+[Unit]
+Description=Retail Kiosk Local Runtime / Hardware Bridge
+After=network-online.target cups.service
+Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=5
+RequiresMountsFor=/opt/retail-kiosk /var/lib/retail-kiosk /var/log/retail-kiosk
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/retail-kiosk/kiosk.env
+WorkingDirectory=/opt/retail-kiosk/current
+User=kiosk
+Group=kiosk-runtime
+ExecStart=/usr/bin/env node services/local-backend/dist/cli.js
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=30
+TimeoutStopSec=20
+KillSignal=SIGTERM
+SyslogIdentifier=retail-kiosk-local-backend
+StateDirectory=retail-kiosk
+LogsDirectory=retail-kiosk
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=/var/lib/retail-kiosk /var/log/retail-kiosk /etc/retail-kiosk
+UMask=0027
+
+[Install]
+WantedBy=retail-kiosk.target
