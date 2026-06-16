@@ -50,6 +50,7 @@ Update parent docs when parent-level structure, ownership, workflow, or child in
 - Keep runtime contract changes centralized in `packages/shared-types` and schema changes in `packages/campaign-schema`; consumers must be updated together.
 - Keep hardware-facing and kiosk-host assumptions explicit in docs/runbooks/infra when changed.
 - Do not model token insertion as a universal prerequisite: campaigns may launch by token, schedule, operator action, or autoplay/video/animation mode. Token-required behavior must be campaign-specific.
+- Treat supermarket/retail wheel campaigns as promotional high-win brand activations, not casino mechanics; future casino products are a separate compliance class.
 - Treat printer/token hardware as kiosk-profile capabilities, not global assumptions. Admin/runtime readiness must distinguish required, optional, and not-installed peripherals; printer paper state must be surfaced when CUPS reports media faults or marked for operator confirmation when unknown.
 - Do not treat generated `dist/`, `dist-web/`, `node_modules/`, `.venv-*`, `test-results/`, or `qa-artifacts/` files as source unless the task explicitly asks for evidence or deployable bundles.
 - Prefer small, verifiable changes with smoke tests because this project touches physical kiosk behavior.

@@ -28,6 +28,8 @@ Campaign code must remain isolated in a sandboxed iframe and communicate through
 
 For Wheel-of-Fortune campaigns the approved model is **hybrid, offline-first backend authority**:
 
+For supermarket/retail brand activations, this is a **promotional high-win engagement mechanic**, not a casino-style gambling mechanic. Most participants may win something by design; the backend authority exists for auditability, inventory/cap control, ticket integrity, and offline continuity, not because the retail campaign is a casino game. Future casino products must be treated as a separate compliance class.
+
 - the campaign manifest defines the prize table, weights, and optional package-level win caps;
 - `outcome_strategy.authority` is `local_backend`;
 - `outcome_strategy.offline_required` is `true`;
