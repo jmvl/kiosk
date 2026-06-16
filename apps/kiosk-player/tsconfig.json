@@ -4,7 +4,6 @@
     "rootDir": "src",
     "outDir": "dist/types",
     "tsBuildInfoFile": "dist/.tsbuildinfo",
-    "jsx": "react-jsx",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
@@ -12,10 +11,10 @@
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
-    "types": ["vite/client"]
+    "types": ["vite/client", "svelte"]
   },
   "include": [
     "src/**/*.ts",
-    "src/**/*.tsx"
+    "src/**/*.svelte"
   ]
 }

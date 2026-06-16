@@ -1,16 +1,11 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import { KioskPlayerApp } from './App.js';
+import { mount } from 'svelte';
+import KioskPlayerApp from './App.svelte';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('missing #root');
 
-createRoot(root).render(
-  <React.StrictMode>
-    <KioskPlayerApp />
-  </React.StrictMode>,
-);
+mount(KioskPlayerApp, { target: root });
 
-export { KioskPlayerApp } from './App.js';
+export { default as KioskPlayerApp } from './App.svelte';
 export { createRuntimeClient, runtimeConfigFromEnv } from './runtime-client.js';
 export { mountPackageBridge, validateBridgeRequest, bridgeProtocol } from './package-bridge.js';

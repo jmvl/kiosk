@@ -10,7 +10,7 @@
 | Kiosk Device / Linux Mini-PC   |
 |                               |
 |  Firefox Kiosk Browser         |
-|  - React/Vite UI               |
+|  - Svelte/Vite UI              |
 |  - PixiJS wheel/game canvas    |
 |  - GSAP transitions            |
 |                               |

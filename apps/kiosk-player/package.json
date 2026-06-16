@@ -1,7 +1,7 @@
 {
   "name": "@retail-kiosk/kiosk-player",
   "version": "0.0.0",
-  "description": "React/Vite fullscreen kiosk player for the local runtime.",
+  "description": "Svelte/Vite fullscreen kiosk player for the local runtime.",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,21 +11,19 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -p tsconfig.build.json && vite build",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "node --test test/*.test.mjs"
+    "typecheck": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "NODE_OPTIONS=--conditions=browser node --test test/*.test.mjs"
   },
   "dependencies": {
     "@retail-kiosk/shared-types": "workspace:*",
-    "@vitejs/plugin-react": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "@sveltejs/vite-plugin-svelte": "latest",
+    "svelte": "latest",
     "typescript": "^5.9.3",
     "vite": "latest"
   },
   "devDependencies": {
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "jsdom": "^29.1.1"
+    "jsdom": "^29.1.1",
+    "svelte-check": "latest"
   },
   "private": true
 }
