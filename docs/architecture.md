@@ -52,7 +52,7 @@
 6. Coin event arrives from hardware.
 7. Backend creates a local session and notifies frontend.
 8. User spins wheel.
-9. Frontend displays animation; backend remains source of truth for session/prize.
+9. Frontend displays animation; local backend remains source of truth for session/prize and can draw outcomes offline from cached campaign rules.
 10. Quiz/question flow runs.
 11. Backend records result and sends print command.
 12. Thermal ticket prints.

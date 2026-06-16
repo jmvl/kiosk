@@ -114,6 +114,52 @@ describe('@retail-kiosk/campaign-schema validator', () => {
     assert.ok(!result.ok && result.errors.some((error) => error.path === 'package_size_limit_bytes'));
   });
 
+  it('accepts an offline backend-authoritative prize table for hybrid wheel campaigns', () => {
+    const result = validatePackageManifest({
+      ...validManifest,
+      outcome_strategy: {
+        authority: 'local_backend',
+        offline_required: true,
+        selection: 'weighted_random',
+        prizes: [
+          { prize_id: 'free-chocomel', label: 'Free Chocomel', weight: 10, max_wins_per_package: 100 },
+          { prize_id: 'try-again', label: 'Try again', weight: 90 },
+        ],
+      },
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.ok && result.manifest.outcome_strategy?.authority, 'local_backend');
+    assert.equal(result.ok && result.manifest.outcome_strategy?.offline_required, true);
+    assert.equal(result.ok && result.manifest.outcome_strategy?.prizes[0].weight, 10);
+  });
+
+  it('rejects frontend-owned or empty prize strategies for offline hybrid campaigns', () => {
+    const frontendResult = validatePackageManifest({
+      ...validManifest,
+      outcome_strategy: {
+        authority: 'campaign_module',
+        offline_required: true,
+        selection: 'weighted_random',
+        prizes: [{ prize_id: 'free-chocomel', label: 'Free Chocomel', weight: 10 }],
+      },
+    });
+    assert.equal(frontendResult.ok, false);
+    assert.ok(!frontendResult.ok && frontendResult.errors.some((error) => error.path === 'outcome_strategy.authority'));
+
+    const emptyResult = validatePackageManifest({
+      ...validManifest,
+      outcome_strategy: {
+        authority: 'local_backend',
+        offline_required: true,
+        selection: 'weighted_random',
+        prizes: [],
+      },
+    });
+    assert.equal(emptyResult.ok, false);
+    assert.ok(!emptyResult.ok && emptyResult.errors.some((error) => error.path === 'outcome_strategy.prizes'));
+  });
+
   it('requires legal paths to be safe and listed as legal files', () => {
     const validLegalManifest = {
       ...validManifest,

@@ -48,5 +48,23 @@
     "path": "ticket-template/template.txt",
     "qr_enabled": true
   },
+  "outcome_strategy": {
+    "authority": "local_backend",
+    "offline_required": true,
+    "selection": "weighted_random",
+    "prizes": [
+      {
+        "prize_id": "free-chocomel",
+        "label": "Free Chocomel",
+        "weight": 10,
+        "max_wins_per_package": 100
+      },
+      {
+        "prize_id": "try-again",
+        "label": "Try again",
+        "weight": 90
+      }
+    ]
+  },
   "package_size_limit_bytes": 262144000
 }

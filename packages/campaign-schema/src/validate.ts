@@ -133,6 +133,71 @@ function hasFileWithRole(files: PackageManifestFile[], path: string, role: Packa
   return files.some((file) => file.path === path && file.role === role);
 }
 
+function validateOutcomeStrategy(value: unknown, errors: ValidationIssue[]): PackageManifest['outcome_strategy'] {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) {
+    push(errors, 'outcome_strategy', 'must be an object when present');
+    return undefined;
+  }
+
+  if (value.authority !== 'local_backend') {
+    push(errors, 'outcome_strategy.authority', 'must be local_backend for offline hybrid campaigns');
+  }
+  if (value.offline_required !== true) {
+    push(errors, 'outcome_strategy.offline_required', 'must be true so kiosk outcomes work without internet');
+  }
+  if (value.selection !== 'weighted_random') {
+    push(errors, 'outcome_strategy.selection', 'must be weighted_random');
+  }
+  if (!Array.isArray(value.prizes) || value.prizes.length === 0) {
+    push(errors, 'outcome_strategy.prizes', 'must be a non-empty array');
+    return undefined;
+  }
+
+  const prizes: NonNullable<PackageManifest['outcome_strategy']>['prizes'] = [];
+  const seenPrizeIds = new Set<string>();
+  value.prizes.forEach((prize, index) => {
+    const base = `outcome_strategy.prizes[${index}]`;
+    if (!isRecord(prize)) {
+      push(errors, base, 'must be an object');
+      return;
+    }
+    const prizeId = stringAt(prize, 'prize_id');
+    const label = stringAt(prize, 'label');
+    const weight = numberAt(prize, 'weight');
+    const maxWins = numberAt(prize, 'max_wins_per_package');
+
+    if (prizeId === undefined || !packageIdPattern.test(prizeId)) {
+      push(errors, `${base}.prize_id`, 'must be kebab-case, 3-64 chars');
+    } else if (seenPrizeIds.has(prizeId)) {
+      push(errors, `${base}.prize_id`, 'must be unique');
+    } else {
+      seenPrizeIds.add(prizeId);
+    }
+    if (label === undefined || label.trim().length === 0) {
+      push(errors, `${base}.label`, 'must be a non-empty string');
+    }
+    if (weight === undefined || !Number.isInteger(weight) || weight <= 0) {
+      push(errors, `${base}.weight`, 'must be a positive integer');
+    }
+    if (prize.max_wins_per_package !== undefined && (maxWins === undefined || !Number.isInteger(maxWins) || maxWins <= 0)) {
+      push(errors, `${base}.max_wins_per_package`, 'must be a positive integer when present');
+    }
+    if (prizeId !== undefined && label !== undefined && weight !== undefined && Number.isInteger(weight) && weight > 0) {
+      const normalizedPrize: NonNullable<PackageManifest['outcome_strategy']>['prizes'][number] = { prize_id: prizeId, label, weight };
+      if (maxWins !== undefined && Number.isInteger(maxWins) && maxWins > 0) {
+        normalizedPrize.max_wins_per_package = maxWins;
+      }
+      prizes.push(normalizedPrize);
+    }
+  });
+
+  if (value.authority === 'local_backend' && value.offline_required === true && value.selection === 'weighted_random' && prizes.length > 0) {
+    return { authority: 'local_backend', offline_required: true, selection: 'weighted_random', prizes };
+  }
+  return undefined;
+}
+
 export function validatePackageManifest(input: unknown): PackageManifestValidationResult {
   const errors: ValidationIssue[] = [];
 
@@ -251,6 +316,8 @@ export function validatePackageManifest(input: unknown): PackageManifestValidati
   }
 
   let legal: PackageManifest['legal'];
+  const outcomeStrategy = validateOutcomeStrategy(input.outcome_strategy, errors);
+
   if (input.legal !== undefined) {
     if (!isRecord(input.legal)) {
       push(errors, 'legal', 'must be an object when present');
@@ -307,6 +374,9 @@ export function validatePackageManifest(input: unknown): PackageManifestValidati
   }
   if (ticketTemplate !== undefined) {
     manifest.ticket_template = ticketTemplate;
+  }
+  if (outcomeStrategy !== undefined) {
+    manifest.outcome_strategy = outcomeStrategy;
   }
   if (legal !== undefined && (legal.terms_path !== undefined || legal.privacy_path !== undefined)) {
     manifest.legal = legal;

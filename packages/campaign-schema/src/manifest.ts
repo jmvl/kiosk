@@ -33,6 +33,20 @@ export interface PackageManifestFile {
   role: 'entrypoint' | 'asset' | 'module' | 'ticket_template' | 'legal' | 'config';
 }
 
+export interface PrizeOutcome {
+  prize_id: string;
+  label: string;
+  weight: number;
+  max_wins_per_package?: number;
+}
+
+export interface OutcomeStrategy {
+  authority: 'local_backend';
+  offline_required: true;
+  selection: 'weighted_random';
+  prizes: PrizeOutcome[];
+}
+
 export interface PackageManifest {
   schema_version: typeof packageManifestSchemaVersion;
   package_id: string;
@@ -54,6 +68,7 @@ export interface PackageManifest {
     path: string;
     qr_enabled: boolean;
   };
+  outcome_strategy?: OutcomeStrategy;
   legal?: {
     terms_path?: string;
     privacy_path?: string;

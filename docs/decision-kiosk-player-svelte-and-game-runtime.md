@@ -24,7 +24,18 @@ Use the following split:
 | Admin dashboard | React + Vite for now | Existing implementation; larger dashboard ecosystem remains useful for forms/tables/ops screens. |
 | Local/central backend | Fastify + SQLite/PostgreSQL + Drizzle | Existing platform foundation remains valid. |
 
-Campaign code must remain isolated in a sandboxed iframe and communicate through the parent-owned package bridge. The campaign module must not directly access hardware, runtime URLs, secrets, filesystem, printer, or token/coin input.
+Campaign code must remain isolated in a sandboxed iframe and communicate through the parent-owned package bridge. The campaign module must not directly access hardware, runtime URLs, secrets, filesystem, printer, token/coin input, or authoritative prize selection.
+
+For Wheel-of-Fortune campaigns the approved model is **hybrid, offline-first backend authority**:
+
+- the campaign manifest defines the prize table, weights, and optional package-level win caps;
+- `outcome_strategy.authority` is `local_backend`;
+- `outcome_strategy.offline_required` is `true`;
+- the local backend performs the weighted draw from its cached campaign package/config without internet access;
+- the PixiJS campaign module receives or requests the authoritative outcome and only animates toward that result;
+- ticket creation, HMAC/signature, print execution, inventory/cap accounting, and sync queue writes stay backend-owned.
+
+Internet connectivity is optional for play. When offline, the kiosk continues from its locally cached package, local SQLite state, and local outcome rules, then syncs events/results once connectivity returns.
 
 ## Wheel-of-Fortune research notes
 
@@ -56,3 +67,4 @@ Do not import random marketplace assets into production packages unless license 
 - SvelteKit is unnecessary for the player shell; use plain Svelte + Vite to avoid routing/SSR complexity.
 - PixiJS should be loaded only inside campaign modules, not the player shell.
 - If a campaign result has monetary/inventory/fraud sensitivity, the local backend must be the authority for the outcome and the module only animates toward the backend result.
+- Campaign manifests may include `outcome_strategy` with `authority: "local_backend"`, `offline_required: true`, `selection: "weighted_random"`, and a local prize table. Frontend-owned prize selection is intentionally rejected for offline hybrid wheel campaigns.
