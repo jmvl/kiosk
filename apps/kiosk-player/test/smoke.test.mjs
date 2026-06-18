@@ -84,6 +84,19 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.doesNotMatch(appSource, /ticket_code|createTicket|qr_payload_template\.replaceAll|Math\.random\(\) \*/);
   });
 
+  it('keeps Dr. Oetker result reveal scoped to the current run and auto-resets to idle', () => {
+    assert.match(appSource, /const resultRevealResetMs = 12_000/);
+    assert.match(appSource, /let resultResetTimer: ReturnType<typeof setTimeout> \| null = null/);
+    assert.match(appSource, /function setReveal\(nextReveal: Reveal \| null\)/);
+    assert.match(appSource, /setTimeout\(resetToIdlePresentation, resultRevealResetMs\)/);
+    assert.match(appSource, /clearResultResetTimer\(\);\n\s+unsubscribe\(\);/);
+    assert.match(appSource, /ticketSummary = customerTicketSummary\(reveal\?\.ticket \?\? null, reveal\)/);
+    assert.doesNotMatch(appSource, /ticketSummary = customerTicketSummary\(runtimeState\?\.latest_ticket/);
+    assert.match(appSource, /ticket: null,\n\s+\}\);/);
+    assert.match(appSource, /ticket: response\.ticket \?\? null/);
+    assert.match(appSource, /postPresentation\(\{ action: 'idle', label: localized\(drOetkerManifest\.quiz\.question, activeLanguage\(\)\) \}\)/);
+  });
+
   it('mounts the package bridge only as an iframe action and destroys it on iframe removal', () => {
     assert.match(appSource, /function packageBridge\(node: HTMLIFrameElement\)/);
     assert.match(appSource, /destroyBridge\(\)/);

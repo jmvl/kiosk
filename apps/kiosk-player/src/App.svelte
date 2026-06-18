@@ -7,11 +7,12 @@
   import './styles.css';
 
   type Screen = 'idle' | 'game' | 'result' | 'maintenance' | 'error';
-  type Reveal = { title: string; body: string; status: string; outcomeId?: string };
+  type Reveal = { title: string; body: string; status: string; outcomeId?: string; ticket?: unknown };
 
   const hqDebugControlsEnabled = import.meta.env.VITE_KIOSK_PLAYER_HQ_DEBUG_CONTROLS === 'true';
   const runtimeClient = createRuntimeClient();
   const defaultLanguage: CampaignLocale = 'fr-BE';
+  const resultRevealResetMs = 12_000;
 
   let runtimeState: RuntimeState | null = null;
   let selectedLanguage: CampaignLocale = defaultLanguage;
@@ -22,6 +23,7 @@
   let busy = false;
   let spinCount = 0;
   let packageFrame: HTMLIFrameElement | null = null;
+  let resultResetTimer: ReturnType<typeof setTimeout> | null = null;
 
   function recordValue(value: unknown, key: string): unknown {
     return value && typeof value === 'object' && key in value ? (value as Record<string, unknown>)[key] : undefined;
@@ -71,7 +73,7 @@
   $: languageLocked = Boolean(runtimeState?.current_session?.session_language || (runtimeState?.current_session?.quiz_attempts ?? 0) > 0 || runtimeState?.current_session?.quiz_passed);
   $: canSpin = runtimeState?.current_session?.state === 'playing' && runtimeState?.current_session?.quiz_passed === true;
   $: screen = screenFor(runtimeState, error, reveal);
-  $: ticketSummary = customerTicketSummary(runtimeState?.latest_ticket, reveal);
+  $: ticketSummary = customerTicketSummary(reveal?.ticket ?? null, reveal);
   $: currentSegmentIndex = reveal?.outcomeId ? segmentIndexForOutcome(reveal.outcomeId, Math.max(spinCount - 1, 0)) : 0;
 
   onMount(() => {
@@ -85,9 +87,29 @@
     }, () => { error = 'runtime_websocket_error'; });
     return () => {
       cancelled = true;
+      clearResultResetTimer();
       unsubscribe();
     };
   });
+
+  function clearResultResetTimer() {
+    if (resultResetTimer) clearTimeout(resultResetTimer);
+    resultResetTimer = null;
+  }
+
+  function resetToIdlePresentation() {
+    setReveal(null);
+    quizMessage = null;
+    postPresentation({ action: 'idle', label: localized(drOetkerManifest.quiz.question, activeLanguage()) });
+  }
+
+  function setReveal(nextReveal: Reveal | null) {
+    reveal = nextReveal;
+    clearResultResetTimer();
+    if (nextReveal) {
+      resultResetTimer = setTimeout(resetToIdlePresentation, resultRevealResetMs);
+    }
+  }
 
   function packageBridge(node: HTMLIFrameElement) {
     packageFrame = node;
@@ -114,7 +136,7 @@
     runtimeState = state;
     if (state.current_session?.session_language) selectedLanguage = state.current_session.session_language;
     if (state.current_session && !hadSession) {
-      reveal = null;
+      setReveal(null);
       quizMessage = null;
       postPresentation({ action: 'idle', label: localized(drOetkerManifest.quiz.question, activeLanguage(state)) });
     }
@@ -144,11 +166,12 @@
       } else if (response.quiz.retry) {
         quizMessage = localized(drOetkerManifest.quiz.retry_copy, language);
       } else {
-        reveal = {
+        setReveal({
           title: language === 'fr-BE' ? 'Merci de votre participation' : 'Bedankt voor uw deelname',
           body: localized(drOetkerManifest.quiz.failed_copy, language),
           status: language === 'fr-BE' ? 'Aucun ticket imprimé' : 'Geen ticket afgedrukt',
-        };
+          ticket: null,
+        });
       }
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
@@ -169,12 +192,13 @@
       spinCount += 1;
       const segmentIndex = outcomeId ? segmentIndexForOutcome(outcomeId, spinCount - 1) : 0;
       const title = outcome ? localized(outcome.localized_label, language) : 'Résultat confirmé';
-      reveal = {
+      setReveal({
         title,
         body: outcome ? localized(outcome.cashier_instruction, language) : (language === 'fr-BE' ? 'Résultat confirmé par le kiosque.' : 'Resultaat bevestigd door de kiosk.'),
         status: outcome?.print_ticket === false ? (language === 'fr-BE' ? 'Aucun ticket imprimé' : 'Geen ticket afgedrukt') : (language === 'fr-BE' ? 'Ticket en cours' : 'Ticket wordt afgedrukt'),
+        ticket: response.ticket ?? null,
         ...(outcomeId ? { outcomeId } : {}),
-      };
+      });
       postPresentation({ action: 'spin', segmentIndex, label: title });
       await tick();
       applyRuntimeState(response.state);
@@ -187,7 +211,7 @@
 
   async function startFakeSession() {
     error = null;
-    reveal = null;
+    setReveal(null);
     quizMessage = null;
     try {
       applyRuntimeState(await runtimeClient.injectDevToken({ source: 'kiosk-player', amount_cents: 100, fake: true }));
