@@ -59,6 +59,22 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.match(clientSource, /'\/spin\/start'/);
   });
 
+  it('keeps the Dr. Oetker quiz copy reactive to pre-answer language switches', () => {
+    assert.match(appSource, /\$: language = activeLanguage\(runtimeState, selectedLanguage\);/);
+    assert.match(appSource, /function activeLanguage\(state: RuntimeState \| null = runtimeState, fallbackLanguage: CampaignLocale = selectedLanguage\)/);
+    assert.match(appSource, /postPresentation\(\{ action: 'idle', label: localized\(drOetkerManifest\.quiz\.question, nextLanguage\) \}\)/);
+    for (const expectedNlCopy of [
+      'Welk product hoort bij een Dr. Oetker pizza?',
+      'Een Ristorante pizza',
+      'Een frisdrank',
+      'Wascapsules',
+      'Draai',
+      'Juist antwoord. Draai aan het wiel.',
+    ]) {
+      assert.ok(appSource.includes(expectedNlCopy) || fixtureSource.includes(expectedNlCopy), `missing NL copy ${expectedNlCopy}`);
+    }
+  });
+
   it('maps backend-selected outcomes to presentation wheel segments without frontend prize authority', () => {
     assert.match(fixtureSource, /visual_wheel/);
     assert.match(fixtureSource, /segmentIndexForOutcome/);

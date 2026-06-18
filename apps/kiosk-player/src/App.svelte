@@ -35,8 +35,8 @@
     return Boolean(value && typeof value === 'object' && typeof recordValue(value, 'outcome_id') === 'string');
   }
 
-  function activeLanguage(state: RuntimeState | null = runtimeState): CampaignLocale {
-    return state?.current_session?.session_language ?? selectedLanguage;
+  function activeLanguage(state: RuntimeState | null = runtimeState, fallbackLanguage: CampaignLocale = selectedLanguage): CampaignLocale {
+    return state?.current_session?.session_language ?? fallbackLanguage;
   }
 
   function customerTicketSummary(latestTicket: unknown, fallback: Reveal | null): Reveal {
@@ -67,7 +67,7 @@
     return 'idle';
   }
 
-  $: language = activeLanguage(runtimeState);
+  $: language = activeLanguage(runtimeState, selectedLanguage);
   $: languageLocked = Boolean(runtimeState?.current_session?.session_language || (runtimeState?.current_session?.quiz_attempts ?? 0) > 0 || runtimeState?.current_session?.quiz_passed);
   $: canSpin = runtimeState?.current_session?.state === 'playing' && runtimeState?.current_session?.quiz_passed === true;
   $: screen = screenFor(runtimeState, error, reveal);
@@ -125,7 +125,10 @@
   }
 
   function selectLanguage(nextLanguage: CampaignLocale) {
-    if (!languageLocked) selectedLanguage = nextLanguage;
+    if (!languageLocked) {
+      selectedLanguage = nextLanguage;
+      postPresentation({ action: 'idle', label: localized(drOetkerManifest.quiz.question, nextLanguage) });
+    }
   }
 
   async function submitAnswer(choiceId: string) {
