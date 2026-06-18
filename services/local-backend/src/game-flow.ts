@@ -55,6 +55,7 @@ export function submitQuizAnswer(db: LocalDatabase, input: { kioskId: string; se
     }
     appendEvent(db, { kioskId: input.kioskId, sessionId: input.sessionId, eventType: 'answer_selected', payload: { language, choice_id: input.choiceId }, occurredAt: now });
     if (choice.correct) {
+      db.prepare('UPDATE sessions SET quiz_passed = 1, updated_at = ? WHERE session_id = ?').run(now, input.sessionId);
       appendEvent(db, { kioskId: input.kioskId, sessionId: input.sessionId, eventType: 'answer_correct', payload: { language, choice_id: input.choiceId }, occurredAt: now });
       appendEvent(db, { kioskId: input.kioskId, sessionId: input.sessionId, eventType: 'spin_button_shown', payload: { language }, occurredAt: now });
       return { session: getSession(db, input.sessionId), correct: true, retry: false, attempts: current.quiz_attempts ?? 0, completed_no_reward: false };

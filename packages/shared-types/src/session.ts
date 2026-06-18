@@ -26,6 +26,7 @@ export interface SessionSnapshot {
   state: SessionState;
   session_language?: 'fr-BE' | 'nl-BE';
   quiz_attempts?: number;
+  quiz_passed?: boolean;
   started_at: string;
   updated_at: string;
   completed_at?: string;

@@ -49,6 +49,7 @@ Update parent docs when parent-level structure, ownership, workflow, or child in
 - Do not remove infrastructure, services, campaigns, generated artifacts, or deployment scripts without explicit human authorization.
 - Keep runtime contract changes centralized in `packages/shared-types` and schema changes in `packages/campaign-schema`; consumers must be updated together.
 - Campaign manifests may carry bilingual `fr-BE`/`nl-BE` quiz, outcome, ticket template, bitmap asset, QR payload, and visual wheel mapping config; keep those validation contracts in `packages/campaign-schema`.
+- Quiz-gated campaign spins must be unlocked by backend-authoritative quiz pass state, not by frontend/module state or language lock alone.
 - Keep hardware-facing and kiosk-host assumptions explicit in docs/runbooks/infra when changed.
 - Do not model token insertion as a universal prerequisite: campaigns may launch by token, schedule, operator action, or autoplay/video/animation mode. Token-required behavior must be campaign-specific.
 - Treat supermarket/retail wheel campaigns as promotional high-win brand activations, not casino mechanics; future casino products are a separate compliance class.

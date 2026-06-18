@@ -534,6 +534,28 @@ describe('local backend fake hardware API', () => {
     }
   });
 
+  it('rejects spin after the first wrong quiz answer without selecting an outcome', async () => {
+    const { app, runtime, auth } = await testServer({ packageId: 'dr-oetker-pizza-wheel', packageVersion: '1.0.0', campaignShortCode: 'DOW' });
+    seedActiveCampaign(runtime);
+    try {
+      await app.inject({ method: 'POST', url: '/dev/token', headers: auth, payload: { denomination_cents: 100 } });
+      const first = await app.inject({ method: 'POST', url: '/quiz/answer', headers: auth, payload: { language: 'fr-BE', choice_id: 'wrong-a' } });
+      assert.equal(first.statusCode, 200);
+      assert.equal(first.json().quiz.retry, true);
+      assert.equal(first.json().state.current_session.session_language, 'fr-BE');
+      assert.equal(first.json().state.current_session.quiz_passed, false);
+
+      const spin = await app.inject({ method: 'POST', url: '/spin/start', headers: auth, payload: {} });
+      assert.equal(spin.statusCode, 409);
+      assert.equal(spin.json().error, 'quiz_not_passed');
+      assert.equal(runtime.db.prepare('select count(*) as count from tickets').get().count, 0);
+      assert.equal(runtime.db.prepare("select count(*) as count from events where event_type = 'outcome_selected'").get().count, 0);
+      assert.equal(runtime.db.prepare("select count(*) as count from events where event_type = 'spin_started'").get().count, 0);
+    } finally {
+      await app.close();
+    }
+  });
+
   it('uses FR and NL session language in backend-selected outcome ticket render payloads', async () => {
     const { app, runtime, auth } = await testServer({ packageId: 'dr-oetker-pizza-wheel', packageVersion: '1.0.0', campaignShortCode: 'DOW' });
     seedActiveCampaign(runtime);
@@ -542,6 +564,7 @@ describe('local backend fake hardware API', () => {
         await app.inject({ method: 'POST', url: '/dev/token', headers: auth, payload: { denomination_cents: 100, language } });
         const answer = await app.inject({ method: 'POST', url: '/quiz/answer', headers: auth, payload: { language, choice_id: 'right' } });
         assert.equal(answer.statusCode, 200);
+        assert.equal(answer.json().state.current_session.quiz_passed, true);
         const spin = await app.inject({ method: 'POST', url: '/spin/start', headers: auth, payload: {} });
         assert.equal(spin.statusCode, 200);
         const body = spin.json();

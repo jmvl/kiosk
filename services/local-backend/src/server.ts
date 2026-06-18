@@ -458,6 +458,7 @@ export async function createLocalBackendServer(runtime = createLocalBackendRunti
     const language = current.session_language;
     if (!isSessionLanguage(language)) return reply.code(409).send({ error: 'session_language_not_locked' });
     const campaign = activeCampaignConfig(runtime);
+    if (campaign.quiz && current.quiz_passed !== true) return reply.code(409).send({ error: 'quiz_not_passed' });
     try {
       appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: current.session_id, eventType: 'spin_started', payload: { language } });
       const outcome = selectWeightedOutcome(runtime.db, campaign.outcome_strategy?.outcomes ?? []);

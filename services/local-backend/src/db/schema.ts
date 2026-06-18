@@ -35,6 +35,7 @@ export const sessions = sqliteTable('sessions', {
   state: text('state').notNull(),
   sessionLanguage: text('session_language'),
   quizAttempts: integer('quiz_attempts').notNull().default(0),
+  quizPassed: integer('quiz_passed', { mode: 'boolean' }).notNull().default(false),
   tokenPayload: text('token_payload', { mode: 'json' }),
   resultPayload: text('result_payload', { mode: 'json' }),
   startedAt: text('started_at').notNull(),
