@@ -15,6 +15,12 @@ export const packageManifestRequiredFields = [
   'files',
 ] as const;
 
+export const requiredCampaignLocales = ['fr-BE', 'nl-BE'] as const;
+
+export type RequiredCampaignLocale = (typeof requiredCampaignLocales)[number];
+
+export type LocalizedCopy = Record<RequiredCampaignLocale, string>;
+
 export type PackageOrientation = 'landscape' | 'portrait';
 
 export type BridgeCapability =
@@ -40,11 +46,67 @@ export interface PrizeOutcome {
   max_wins_per_package?: number;
 }
 
+export interface CampaignQuizChoice {
+  choice_id: string;
+  label: LocalizedCopy;
+  correct: boolean;
+}
+
+export interface CampaignQuiz {
+  question: LocalizedCopy;
+  choices: CampaignQuizChoice[];
+  attempt_limit: number;
+  retry_copy?: LocalizedCopy;
+  failed_copy?: LocalizedCopy;
+}
+
+export type CampaignOutcomeType = 'win' | 'loss' | 'consolation' | 'grand_prize' | 'custom';
+
+export interface CampaignOutcome {
+  outcome_id: string;
+  outcome_type: CampaignOutcomeType;
+  active: boolean;
+  localized_label: LocalizedCopy;
+  weight: number;
+  inventory_cap?: number;
+  daily_cap?: number;
+  print_ticket: boolean;
+  ticket_template_id?: string;
+  bitmap_asset_id?: string;
+  qr_payload_template?: string;
+  approved_qr_payload_equivalent?: string;
+  cashier_instruction: LocalizedCopy;
+  terms: LocalizedCopy;
+}
+
+export interface CampaignTicketTemplate {
+  template_id: string;
+  path: string;
+  bitmap_asset_id?: string;
+}
+
+export interface CampaignBitmapAsset {
+  asset_id: string;
+  path: string;
+}
+
+export interface VisualWheelSegment {
+  segment_id: string;
+  outcome_id: string;
+  bitmap_asset_id?: string;
+  localized_label?: LocalizedCopy;
+}
+
+export interface VisualWheelMapping {
+  segments: VisualWheelSegment[];
+}
+
 export interface OutcomeStrategy {
   authority: 'local_backend';
   offline_required: true;
   selection: 'weighted_random';
-  prizes: PrizeOutcome[];
+  prizes?: PrizeOutcome[];
+  outcomes?: CampaignOutcome[];
 }
 
 export interface PackageManifest {
@@ -68,6 +130,10 @@ export interface PackageManifest {
     path: string;
     qr_enabled: boolean;
   };
+  quiz?: CampaignQuiz;
+  ticket_templates?: CampaignTicketTemplate[];
+  bitmap_assets?: CampaignBitmapAsset[];
+  visual_wheel?: VisualWheelMapping;
   outcome_strategy?: OutcomeStrategy;
   legal?: {
     terms_path?: string;

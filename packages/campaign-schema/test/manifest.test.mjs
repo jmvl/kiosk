@@ -200,4 +200,159 @@ describe('@retail-kiosk/campaign-schema validator', () => {
     assert.equal(unlistedResult.ok, false);
     assert.ok(!unlistedResult.ok && unlistedResult.errors.some((error) => error.path === 'legal.privacy_path'));
   });
+
+  it('accepts bilingual quiz, generic outcomes, ticket templates, bitmap assets, and visual wheel mapping', () => {
+    const localized = (fr, nl) => ({ 'fr-BE': fr, 'nl-BE': nl });
+    const result = validatePackageManifest({
+      ...validManifest,
+      files: [
+        ...validManifest.files,
+        {
+          path: 'assets/tickets/discount.bmp',
+          size_bytes: 20,
+          sha256: 'e'.repeat(64),
+          media_type: 'image/bmp',
+          role: 'asset',
+        },
+      ],
+      quiz: {
+        question: localized('Quelle pizza est Dr. Oetker ?', 'Welke pizza is Dr. Oetker?'),
+        choices: [
+          { choice_id: 'ristorante', label: localized('Ristorante', 'Ristorante'), correct: true },
+          { choice_id: 'cola', label: localized('Cola', 'Cola'), correct: false },
+          { choice_id: 'chips', label: localized('Chips', 'Chips'), correct: false },
+        ],
+        retry_copy: localized('Presque ! Essayez encore.', 'Bijna! Probeer opnieuw.'),
+        failed_copy: localized('Merci de votre participation.', 'Bedankt voor uw deelname.'),
+      },
+      bitmap_assets: [{ asset_id: 'discount-ticket', path: 'assets/tickets/discount.bmp' }],
+      ticket_templates: [{ template_id: 'discount-ticket', path: 'ticket-template/template.txt', bitmap_asset_id: 'discount-ticket' }],
+      outcome_strategy: {
+        authority: 'local_backend',
+        offline_required: true,
+        selection: 'weighted_random',
+        outcomes: [
+          {
+            outcome_id: 'discount-small',
+            outcome_type: 'win',
+            active: true,
+            localized_label: localized('Réduction pizza', 'Pizza korting'),
+            weight: 80,
+            print_ticket: true,
+            ticket_template_id: 'discount-ticket',
+            bitmap_asset_id: 'discount-ticket',
+            qr_payload_template: 'https://promo.acmea.tech/r/{{ticket_code}}',
+            cashier_instruction: localized('Présentez ce ticket à la caisse.', 'Toon dit ticket aan de kassa.'),
+            terms: localized('Valable aujourd’hui.', 'Vandaag geldig.'),
+          },
+          {
+            outcome_id: 'friendly-thanks',
+            outcome_type: 'consolation',
+            active: true,
+            localized_label: localized('Merci', 'Bedankt'),
+            weight: 20,
+            print_ticket: false,
+            cashier_instruction: localized('Aucune action caisse.', 'Geen kassahandeling.'),
+            terms: localized('Sans ticket.', 'Geen ticket.'),
+          },
+        ],
+      },
+      visual_wheel: {
+        segments: [
+          { segment_id: 'slice-one', outcome_id: 'discount-small', bitmap_asset_id: 'discount-ticket' },
+          { segment_id: 'slice-two', outcome_id: 'discount-small' },
+          { segment_id: 'slice-three', outcome_id: 'friendly-thanks' },
+        ],
+      },
+    });
+
+    assert.equal(result.ok, true);
+    assert.equal(result.ok && result.manifest.quiz?.attempt_limit, 2);
+    assert.equal(result.ok && result.manifest.outcome_strategy?.outcomes?.[0]?.print_ticket, true);
+    assert.equal(result.ok && result.manifest.visual_wheel?.segments.length, 3);
+  });
+
+  it('rejects missing bilingual quiz copy, wrong quiz shape, and wrong correct answer count', () => {
+    const localized = (fr, nl) => ({ 'fr-BE': fr, 'nl-BE': nl });
+    const result = validatePackageManifest({
+      ...validManifest,
+      quiz: {
+        question: { 'fr-BE': 'Question seule' },
+        choices: [
+          { choice_id: 'one', label: localized('Un', 'Een'), correct: true },
+          { choice_id: 'two', label: localized('Deux', 'Twee'), correct: true },
+        ],
+      },
+    });
+
+    assert.equal(result.ok, false);
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'quiz.question.nl-BE'));
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'quiz.choices' && error.message.includes('exactly 3')));
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'quiz.choices' && error.message.includes('exactly 1')));
+  });
+
+  it('rejects invalid generic outcome ticket, QR, bitmap, and visual mapping references', () => {
+    const localized = (fr, nl) => ({ 'fr-BE': fr, 'nl-BE': nl });
+    const result = validatePackageManifest({
+      ...validManifest,
+      ticket_templates: [{ template_id: 'known-template', path: 'ticket-template/template.txt' }],
+      outcome_strategy: {
+        authority: 'local_backend',
+        offline_required: true,
+        selection: 'weighted_random',
+        outcomes: [
+          {
+            outcome_id: 'discount-small',
+            outcome_type: 'win',
+            active: true,
+            localized_label: localized('Réduction pizza', 'Pizza korting'),
+            weight: 80,
+            print_ticket: true,
+            ticket_template_id: 'missing-template',
+            bitmap_asset_id: 'missing-bitmap',
+            qr_payload_template: 'https://promo.acmea.tech/static-code',
+            cashier_instruction: localized('Présentez ce ticket à la caisse.', 'Toon dit ticket aan de kassa.'),
+            terms: localized('Valable aujourd’hui.', 'Vandaag geldig.'),
+          },
+        ],
+      },
+      visual_wheel: { segments: [{ segment_id: 'slice-one', outcome_id: 'missing-outcome' }] },
+    });
+
+    assert.equal(result.ok, false);
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'outcome_strategy.outcomes[0].ticket_template_id'));
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'outcome_strategy.outcomes[0].bitmap_asset_id'));
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'outcome_strategy.outcomes[0].qr_payload_template'));
+    assert.ok(!result.ok && result.errors.some((error) => error.path === 'visual_wheel.segments[0].outcome_id'));
+  });
+
+  it('accepts an explicitly approved QR payload equivalent without {{ticket_code}}', () => {
+    const localized = (fr, nl) => ({ 'fr-BE': fr, 'nl-BE': nl });
+    const result = validatePackageManifest({
+      ...validManifest,
+      ticket_templates: [{ template_id: 'discount-ticket', path: 'ticket-template/template.txt' }],
+      outcome_strategy: {
+        authority: 'local_backend',
+        offline_required: true,
+        selection: 'weighted_random',
+        outcomes: [
+          {
+            outcome_id: 'discount-small',
+            outcome_type: 'win',
+            active: true,
+            localized_label: localized('Réduction pizza', 'Pizza korting'),
+            weight: 80,
+            print_ticket: true,
+            ticket_template_id: 'discount-ticket',
+            qr_payload_template: 'signed-ticket-code-placeholder',
+            approved_qr_payload_equivalent: 'Retailer POS encodes backend signed ticket code outside the URL template.',
+            cashier_instruction: localized('Présentez ce ticket à la caisse.', 'Toon dit ticket aan de kassa.'),
+            terms: localized('Valable aujourd’hui.', 'Vandaag geldig.'),
+          },
+        ],
+      },
+    });
+
+    assert.equal(result.ok, true);
+  });
 });
