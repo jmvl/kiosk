@@ -157,7 +157,7 @@ button.secondary { background: oklch(0.26 0.03 252); color: oklch(0.94 0.006 250
 .action-message { padding: 0.8rem; border-radius: 0.85rem; background: oklch(0.18 0.03 205); color: oklch(0.86 0.08 205) !important; }
 .error-text { color: oklch(0.86 0.11 28) !important; }
 
-.scheduler-panel, .telemetry-panel, .game-runs-panel {
+.scheduler-panel, .telemetry-panel, .game-runs-panel, .campaign-preview-panel {
   grid-column: 1 / -1;
   display: grid;
   gap: 1rem;
@@ -383,6 +383,78 @@ button.secondary { background: oklch(0.26 0.03 252); color: oklch(0.94 0.006 250
   border: 1px solid oklch(0.4 0.065 78);
 }
 
+.campaign-boundary {
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.85rem;
+  color: oklch(0.86 0.055 84) !important;
+  background: oklch(0.2 0.035 78);
+  border: 1px solid oklch(0.4 0.065 78);
+}
+
+.campaign-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.campaign-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.campaign-preview-card, .segment-list article {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: oklch(0.17 0.022 252);
+  border: 1px solid oklch(0.34 0.032 252);
+}
+
+.campaign-preview-card h3 { margin: 0 0 0.75rem; }
+.campaign-preview-card ul { display: grid; gap: 0.55rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.campaign-preview-card li { display: grid; gap: 0.2rem; }
+.campaign-preview-card span, .segment-list span { color: oklch(0.76 0.018 252); font-size: 0.86rem; }
+.campaign-preview-card code, .campaign-table code { color: oklch(0.88 0.12 205); white-space: normal; word-break: break-word; }
+
+.campaign-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 1rem;
+  border: 1px solid oklch(0.34 0.032 252);
+}
+
+.campaign-table {
+  width: 100%;
+  min-width: 58rem;
+  border-collapse: collapse;
+  background: oklch(0.16 0.022 252);
+}
+
+.campaign-table th, .campaign-table td {
+  padding: 0.78rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid oklch(0.3 0.03 252);
+}
+
+.campaign-table th {
+  color: oklch(0.78 0.13 205);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.campaign-table small, .segment-list small, .segment-list strong { display: block; }
+.campaign-table small, .segment-list small { margin-top: 0.25rem; }
+
+.segment-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
 .run-table-scroll {
   max-width: 100%;
   overflow-x: auto;
@@ -440,7 +512,7 @@ button.secondary { background: oklch(0.26 0.03 252); color: oklch(0.94 0.006 250
 
 @media (max-width: 850px) {
   .topbar, .login-card { grid-template-columns: 1fr; display: grid; }
-  .status-strip, .grid, .scheduler-summary, .scheduler-form, .status-card-grid, .display-grid, .readiness-grid, .action-button-grid, .peripheral-grid { grid-template-columns: 1fr; }
+  .status-strip, .grid, .scheduler-summary, .scheduler-form, .status-card-grid, .display-grid, .readiness-grid, .action-button-grid, .peripheral-grid, .campaign-summary-grid, .campaign-preview-grid, .segment-list { grid-template-columns: 1fr; }
   .topbar h1 { font-size: 1.8rem; }
 }
 

@@ -177,6 +177,29 @@ describe('local backend admin telemetry', () => {
     }
   });
 
+  it('serves read-only campaign content preview before the admin static wildcard', async () => {
+    const { app, runtime, auth } = await testServer({ campaignShortCode: 'DOW' });
+    try {
+      seedActiveCampaign(runtime);
+      const response = await app.inject({ method: 'GET', url: '/admin/api/campaign-preview', headers: auth });
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.equal(body.package_id, 'dr-oetker-pizza-wheel');
+      assert.equal(body.access.editing_supported, false);
+      assert.equal(body.access.store_operator_editing, 'disabled-read-only-v1');
+      assert.match(body.access.boundary_note, /Production auth/);
+      assert.equal(body.quiz.attempt_limit, 2);
+      assert.equal(body.outcome_strategy.authority, 'local_backend');
+      assert.equal(body.outcome_strategy.outcomes[0].outcome_id, 'free-pizza');
+      assert.equal(body.ticket_templates[0].template_id, 'voucher-v1');
+      assert.equal(body.bitmap_assets[0].asset_id, 'ticket-bitmap');
+      assert.equal(body.qr_payload_patterns[0].qr_payload_template, 'https://promo.example.test/r/{{ticket_code}}');
+      assert.equal(body.visual_wheel.segments[0].outcome_id, 'free-pizza');
+    } finally {
+      await app.close();
+    }
+  });
+
   it('serves admin static assets from workspace root when package start cwd is local-backend', async () => {
     const originalCwd = process.cwd();
     const root = mkdtempSync(join(tmpdir(), 'retail-kiosk-workspace-'));
@@ -226,6 +249,7 @@ function campaignRuntimePayload() {
       ],
       attempt_limit: 2,
     },
+    bitmap_assets: [{ asset_id: 'ticket-bitmap', path: 'assets/tickets/ticket-bitmap.txt' }],
     ticket_templates: [{ template_id: 'voucher-v1', path: 'ticket-template/voucher.txt', bitmap_asset_id: 'ticket-bitmap' }],
     outcome_strategy: {
       authority: 'local_backend',
@@ -244,6 +268,9 @@ function campaignRuntimePayload() {
         cashier_instruction: { 'fr-BE': 'Scannez ce ticket FR', 'nl-BE': 'Scan dit ticket NL' },
         terms: { 'fr-BE': 'Valable en Belgique FR', 'nl-BE': 'Geldig in België NL' },
       }],
+    },
+    visual_wheel: {
+      segments: [{ segment_id: 'slice-free-pizza', outcome_id: 'free-pizza', bitmap_asset_id: 'ticket-bitmap', localized_label: { 'fr-BE': 'Pizza gratuite', 'nl-BE': 'Gratis pizza' } }],
     },
   };
 }

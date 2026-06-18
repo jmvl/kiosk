@@ -272,6 +272,46 @@ function activeCampaignConfig(runtime: LocalBackendRuntime): ReturnType<typeof c
   return campaignConfigFromPayload(activeModule.payload);
 }
 
+function activeCampaignPreview(runtime: LocalBackendRuntime): Record<string, unknown> {
+  const activeModule = activeRuntimeModule(runtime.db, { packageId: runtime.config.packageId, packageVersion: runtime.config.packageVersion });
+  const payload = activeModule.payload;
+  const outcomeStrategy = typeof payload.outcome_strategy === 'object' && payload.outcome_strategy !== null && !Array.isArray(payload.outcome_strategy)
+    ? payload.outcome_strategy as Record<string, unknown>
+    : {};
+  return {
+    package_id: activeModule.package_id,
+    package_version: activeModule.package_version,
+    module_id: activeModule.module_id,
+    module_version: activeModule.module_version,
+    schedule_id: activeModule.schedule_id,
+    slot_id: activeModule.slot_id,
+    access: {
+      surface: 'local-admin-preview',
+      intended_roles: ['superadmin', 'campaign-owner'],
+      auth_status: runtime.config.authToken ? 'local-token-only' : 'not-configured',
+      editing_supported: false,
+      store_operator_editing: 'disabled-read-only-v1',
+      boundary_note: 'HQ-only campaign content preview. Production auth, central permissions, and store operator content editing are not implemented in this local bootstrap.',
+    },
+    campaign_short_code: payload.campaign_short_code ?? runtime.config.campaignShortCode,
+    quiz: payload.quiz ?? null,
+    outcome_strategy: {
+      authority: outcomeStrategy.authority ?? null,
+      offline_required: outcomeStrategy.offline_required ?? null,
+      selection: outcomeStrategy.selection ?? null,
+      outcomes: outcomeStrategy.outcomes ?? [],
+    },
+    ticket_templates: payload.ticket_templates ?? [],
+    bitmap_assets: payload.bitmap_assets ?? [],
+    qr_payload_patterns: Array.isArray(outcomeStrategy.outcomes)
+      ? outcomeStrategy.outcomes
+        .filter((outcome): outcome is Record<string, unknown> => typeof outcome === 'object' && outcome !== null && !Array.isArray(outcome) && typeof outcome.qr_payload_template === 'string')
+        .map((outcome) => ({ outcome_id: outcome.outcome_id ?? null, qr_payload_template: outcome.qr_payload_template }))
+      : [],
+    visual_wheel: payload.visual_wheel ?? null,
+  };
+}
+
 const staticContentTypes: Record<string, string> = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -372,6 +412,7 @@ export async function createLocalBackendServer(runtime = createLocalBackendRunti
   });
 
   app.get('/admin', async (_request, reply) => sendAdminStaticFile(runtime, '', reply));
+  app.get('/admin/api/campaign-preview', async () => activeCampaignPreview(runtime));
   app.get('/admin/api/telemetry', async () => collectAdminTelemetry(runtime.config));
   app.get('/admin/api/game-runs', async () => ({ runs: listGameRunLog(runtime.db, 20) }));
   app.get('/telemetry', async () => collectAdminTelemetry(runtime.config));

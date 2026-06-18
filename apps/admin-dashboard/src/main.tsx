@@ -106,6 +106,52 @@ type GameRunLogEntry = {
 
 type GameRunsResponse = { runs: GameRunLogEntry[] };
 
+type LocalizedText = Record<'fr-BE' | 'nl-BE', string>;
+
+type CampaignPreviewResponse = {
+  package_id: string;
+  package_version: string;
+  module_id: string;
+  module_version: string;
+  campaign_short_code: string;
+  access: {
+    intended_roles: string[];
+    auth_status: string;
+    editing_supported: boolean;
+    store_operator_editing: string;
+    boundary_note: string;
+  };
+  quiz: null | {
+    question?: LocalizedText;
+    attempt_limit?: number;
+    choices?: Array<{ choice_id: string; label?: LocalizedText; correct?: boolean }>;
+  };
+  outcome_strategy: {
+    authority: string | null;
+    offline_required: boolean | null;
+    selection: string | null;
+    outcomes: Array<{
+      outcome_id: string;
+      outcome_type: string;
+      active: boolean;
+      localized_label?: LocalizedText;
+      weight: number;
+      daily_cap?: number;
+      inventory_cap?: number;
+      print_ticket: boolean;
+      ticket_template_id?: string;
+      bitmap_asset_id?: string;
+      qr_payload_template?: string;
+    }>;
+  };
+  ticket_templates: Array<{ template_id: string; path: string; bitmap_asset_id?: string }>;
+  bitmap_assets: Array<{ asset_id: string; path: string }>;
+  qr_payload_patterns: Array<{ outcome_id: string | null; qr_payload_template: string }>;
+  visual_wheel: null | {
+    segments?: Array<{ segment_id: string; outcome_id: string; bitmap_asset_id?: string; localized_label?: LocalizedText }>;
+  };
+};
+
 type ActivationMode = 'immediate' | 'next-safe-boundary' | 'scheduled';
 type ValidationStatus = 'draft' | 'valid' | 'invalid';
 type CacheStatus = 'pending' | 'cached' | 'failed';
@@ -185,21 +231,24 @@ function useKioskData() {
   const [schedules, setSchedules] = React.useState<LoadState<SchedulesResponse>>({ status: 'loading' });
   const [telemetry, setTelemetry] = React.useState<LoadState<AdminTelemetry>>({ status: 'loading' });
   const [gameRuns, setGameRuns] = React.useState<LoadState<GameRunsResponse>>({ status: 'loading' });
+  const [campaignPreview, setCampaignPreview] = React.useState<LoadState<CampaignPreviewResponse>>({ status: 'loading' });
   const [lastRefresh, setLastRefresh] = React.useState<Date | null>(null);
 
   const refresh = React.useCallback(async () => {
     const loadedAt = new Date();
     try {
-      const [healthData, stateData, telemetryData, runData] = await Promise.all([
+      const [healthData, stateData, telemetryData, runData, campaignData] = await Promise.all([
         fetchJson<HealthResponse>('/health'),
         fetchJson<RuntimeState>('/state'),
         fetchJson<AdminTelemetry>('/admin/api/telemetry'),
         fetchJson<GameRunsResponse>('/admin/api/game-runs'),
+        fetchJson<CampaignPreviewResponse>('/admin/api/campaign-preview'),
       ]);
       setHealth({ status: 'ready', data: healthData });
       setState({ status: 'ready', data: stateData });
       setTelemetry({ status: 'ready', data: telemetryData });
       setGameRuns({ status: 'ready', data: runData });
+      setCampaignPreview({ status: 'ready', data: campaignData });
       setLastRefresh(loadedAt);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown load error';
@@ -207,6 +256,7 @@ function useKioskData() {
       setState((current) => current.status === 'ready' ? current : { status: 'error', message });
       setTelemetry((current) => current.status === 'ready' ? current : { status: 'error', message });
       setGameRuns((current) => current.status === 'ready' ? current : { status: 'error', message });
+      setCampaignPreview((current) => current.status === 'ready' ? current : { status: 'error', message });
     }
 
     try {
@@ -225,7 +275,7 @@ function useKioskData() {
     return () => window.clearInterval(timer);
   }, [refresh]);
 
-  return { health, state, schedules, telemetry, gameRuns, lastRefresh, refresh };
+  return { health, state, schedules, telemetry, gameRuns, campaignPreview, lastRefresh, refresh };
 }
 
 function Pill({ tone, children }: { tone: 'good' | 'warn' | 'bad' | 'neutral'; children: React.ReactNode }) {
@@ -770,8 +820,104 @@ function SchedulerPanel({ schedules, runtime, scheduler, onRefresh }: { schedule
   );
 }
 
+function localized(value: LocalizedText | undefined, locale: 'fr-BE' | 'nl-BE' = 'fr-BE'): string {
+  if (!value) return 'not configured';
+  return value[locale] ?? value['fr-BE'] ?? value['nl-BE'] ?? 'not configured';
+}
+
+function CampaignPreviewPanel({ preview }: { preview: LoadState<CampaignPreviewResponse> }) {
+  if (preview.status === 'loading') {
+    return <section className="panel campaign-preview-panel" aria-label="Campaign content preview"><p className="muted">Loading campaign content preview…</p></section>;
+  }
+  if (preview.status === 'error') {
+    return <section className="panel campaign-preview-panel" aria-label="Campaign content preview"><p className="error-text">Campaign preview API: {preview.message}</p></section>;
+  }
+
+  const data = preview.data;
+  const outcomes = data.outcome_strategy.outcomes ?? [];
+  const segments = data.visual_wheel?.segments ?? [];
+  const printable = outcomes.filter((outcome) => outcome.print_ticket).length;
+  return (
+    <section className="panel campaign-preview-panel" aria-label="Campaign content preview">
+      <div className="panel-heading">
+        <div>
+          <p className="section-label">Campaign content preview</p>
+          <h2>Dr. Oetker quiz, outcomes, tickets, and wheel map</h2>
+        </div>
+        <div className="pill-row">
+          <Pill tone="warn">HQ-only preview</Pill>
+          <Pill tone="neutral">read-only v1</Pill>
+        </div>
+      </div>
+      <p className="campaign-boundary">{data.access.boundary_note}</p>
+      <div className="campaign-summary-grid">
+        <StatusCard title="Active campaign" value={`${data.package_id}@${data.package_version}`} hint={`${data.module_id}@${data.module_version} · ${data.campaign_short_code}`} tone="neutral" />
+        <StatusCard title="Editing boundary" value={data.access.editing_supported ? 'enabled' : 'disabled'} hint={`Store operator content editing: ${data.access.store_operator_editing}`} tone={data.access.editing_supported ? 'warn' : 'good'} />
+        <StatusCard title="Runtime authority" value={data.outcome_strategy.authority ?? 'unknown'} hint={`${data.outcome_strategy.selection ?? 'no selection'} · ${data.outcome_strategy.offline_required ? 'offline required' : 'offline optional'}`} tone="good" />
+        <StatusCard title="Ticket outputs" value={`${printable} printable / ${outcomes.length} outcomes`} hint={`${data.ticket_templates.length} templates · ${data.qr_payload_patterns.length} QR patterns`} tone="neutral" />
+      </div>
+
+      <div className="campaign-preview-grid">
+        <article className="campaign-preview-card">
+          <h3>Quiz</h3>
+          <p><strong>{localized(data.quiz?.question)}</strong></p>
+          <p className="muted">Attempt limit: {data.quiz?.attempt_limit ?? 'not configured'}</p>
+          <ul>
+            {(data.quiz?.choices ?? []).map((choice) => (
+              <li key={choice.choice_id}>{localized(choice.label)} <span>{choice.correct ? 'correct' : 'decoy'}</span></li>
+            ))}
+          </ul>
+        </article>
+
+        <article className="campaign-preview-card">
+          <h3>Ticket templates and QR payloads</h3>
+          <ul>
+            {data.ticket_templates.map((template) => (
+              <li key={template.template_id}><code>{template.template_id}</code> <span>{template.path}{template.bitmap_asset_id ? ` · ${template.bitmap_asset_id}` : ''}</span></li>
+            ))}
+          </ul>
+          <ul>
+            {data.qr_payload_patterns.map((pattern) => (
+              <li key={`${pattern.outcome_id}-${pattern.qr_payload_template}`}><code>{pattern.outcome_id ?? 'campaign'}</code> <span>{pattern.qr_payload_template}</span></li>
+            ))}
+          </ul>
+        </article>
+      </div>
+
+      <div className="campaign-table-scroll" role="region" aria-label="Outcome preview table" tabIndex={0}>
+        <table className="campaign-table">
+          <thead>
+            <tr><th>Outcome</th><th>Label</th><th>Weight</th><th>Ticket</th><th>Limits</th></tr>
+          </thead>
+          <tbody>
+            {outcomes.map((outcome) => (
+              <tr key={outcome.outcome_id}>
+                <td><code>{outcome.outcome_id}</code><small>{outcome.outcome_type}{outcome.active ? '' : ' · inactive'}</small></td>
+                <td>{localized(outcome.localized_label)}</td>
+                <td>{outcome.weight}</td>
+                <td>{outcome.print_ticket ? (outcome.ticket_template_id ?? 'print') : 'no print'}<small>{outcome.qr_payload_template ?? 'no QR payload'}</small></td>
+                <td>{outcome.daily_cap ? `daily ${outcome.daily_cap}` : 'no daily cap'}<small>{outcome.inventory_cap ? `inventory ${outcome.inventory_cap}` : 'no inventory cap'}</small></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="segment-list" aria-label="Visual segment mapping">
+        {segments.map((segment, index) => (
+          <article key={segment.segment_id}>
+            <span>Segment {index + 1}</span>
+            <strong>{localized(segment.localized_label)}</strong>
+            <small>{segment.segment_id} → {segment.outcome_id}{segment.bitmap_asset_id ? ` · ${segment.bitmap_asset_id}` : ''}</small>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function App() {
-  const { health, state, schedules, telemetry, gameRuns, lastRefresh, refresh } = useKioskData();
+  const { health, state, schedules, telemetry, gameRuns, campaignPreview, lastRefresh, refresh } = useKioskData();
   const runtime = state.status === 'ready' ? state.data.runtime : null;
   const scheduler = state.status === 'ready' ? state.data.scheduler : null;
   const latestTicket = state.status === 'ready' ? state.data.latest_ticket : null;
@@ -883,6 +1029,8 @@ function App() {
         <DisplayDiagnosticsPanel />
 
         <PackageReadinessPanel runtime={runtime} scheduler={scheduler} />
+
+        <CampaignPreviewPanel preview={campaignPreview} />
 
         <SchedulerPanel schedules={schedules} runtime={runtime} scheduler={scheduler} onRefresh={refresh} />
 

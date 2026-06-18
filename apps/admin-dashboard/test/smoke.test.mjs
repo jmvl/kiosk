@@ -137,5 +137,13 @@ describe('@retail-kiosk/admin-dashboard v1', () => {
     assert.match(bundle, /\/admin\/api\/game-runs/);
     assert.match(bundle, /Recent sessions, events, and tickets/);
     assert.match(bundle, /Ticket \/ print/);
+    assert.match(bundle, /\/admin\/api\/campaign-preview/);
+    assert.match(bundle, /Campaign content preview/);
+    assert.match(bundle, /Dr\. Oetker quiz, outcomes, tickets, and wheel map/);
+    assert.match(bundle, /HQ-only preview/);
+    assert.match(bundle, /read-only v1/);
+    assert.match(bundle, /Store operator content editing/);
+    assert.match(bundle, /boundary_note/);
+    assert.match(bundle, /Visual segment mapping/);
   });
 });
