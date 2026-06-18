@@ -1,0 +1,5 @@
+Prototype privacy placeholder.
+
+FR-BE: Le ticket contient un code de participation signé. Aucune donnée personnelle n'est nécessaire pour cette démonstration.
+
+NL-BE: Het ticket bevat een ondertekende deelnamecode. Voor deze demo zijn geen persoonsgegevens nodig.

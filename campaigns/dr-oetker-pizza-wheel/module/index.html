@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="fr-BE">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Pizza Wheel Campaign Scaffold</title>
+<style>
+  :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; background:#fff8ec; color:#3b1f12; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; overflow:hidden; }
+  main { box-sizing:border-box; width:min(88vw, 980px); min-height:min(78vh, 760px); display:grid; place-items:center; align-content:center; gap:18px; text-align:center; padding:48px; border-radius:42px; background:radial-gradient(circle at 50% 42%, #ffe9b6 0 24%, #e85d35 25% 26%, #f8c96f 27% 49%, #2f7d32 50% 51%, #fff3d5 52% 100%); box-shadow:0 28px 90px #6b2a1326; }
+  h1 { max-width:760px; margin:0; font-size:clamp(42px, 7vw, 92px); line-height:.9; letter-spacing:-0.06em; }
+  p { max-width:680px; margin:0; font-size:clamp(18px, 2.5vw, 28px); }
+  .wheel { width:clamp(210px, 34vh, 340px); height:clamp(210px, 34vh, 340px); border-radius:50%; border:16px solid #d84624; background:conic-gradient(#f7d37f 0 45deg,#f9f0d6 45deg 90deg,#d84624 90deg 135deg,#f7d37f 135deg 180deg,#2f7d32 180deg 225deg,#f9f0d6 225deg 270deg,#d84624 270deg 315deg,#f7d37f 315deg 360deg); box-shadow:inset 0 0 0 18px #fff8ec, 0 18px 50px #6b2a132b; animation:idleSpin 9s ease-in-out infinite; }
+  button { border:0; border-radius:999px; padding:18px 34px; color:#fff8ec; background:#d84624; font-weight:900; font-size:clamp(20px, 3vw, 30px); cursor:pointer; box-shadow:0 10px 0 #8b2b18; }
+  button:active { transform:translateY(6px); box-shadow:0 4px 0 #8b2b18; }
+  @keyframes idleSpin { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(8deg)} }
+</style>
+</head>
+<body>
+<main>
+  <div class="wheel" aria-hidden="true"></div>
+  <h1>Pizza Wheel</h1>
+  <p id="status">Prototype module scaffold. The backend owns quiz attempts, outcome selection, ticket codes, and print decisions.</p>
+  <button id="demo" type="button">Bridge smoke test</button>
+</main>
+<script>
+(() => {
+  const protocol = 'retail-kiosk-package-bridge/v1';
+  let sequence = 0;
+  const pending = new Map();
+  function bridge(method, payload) {
+    const id = 'pizza-wheel-' + (++sequence);
+    parent.postMessage({ protocol, type: 'request', id, method, payload }, '*');
+    return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+  }
+  window.addEventListener('message', (event) => {
+    const message = event.data || {};
+    if (message.protocol !== protocol || message.type !== 'response') return;
+    const callbacks = pending.get(message.id);
+    if (!callbacks) return;
+    pending.delete(message.id);
+    message.ok ? callbacks.resolve(message.result) : callbacks.reject(new Error(message.error || 'bridge_error'));
+  });
+  bridge('recordTelemetry', { event: 'package_loaded', package_id: 'dr-oetker-pizza-wheel' }).catch(() => {});
+  document.getElementById('demo').addEventListener('click', async () => {
+    const status = document.getElementById('status');
+    status.textContent = 'Requesting runtime capabilities…';
+    try {
+      const capabilities = await bridge('getRuntimeCapabilities', {});
+      status.textContent = 'Runtime bridge available: ' + JSON.stringify(capabilities);
+      await bridge('complete', { result: 'scaffold_smoke_complete' });
+    } catch (error) {
+      await bridge('fail', { message: String(error && error.message || error) }).catch(() => {});
+      status.textContent = 'Bridge request failed: ' + String(error && error.message || error);
+    }
+  });
+})();
+</script>
+</body>
+</html>

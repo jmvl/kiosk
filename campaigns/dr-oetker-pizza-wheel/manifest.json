@@ -1,0 +1,335 @@
+{
+  "schema_version": 1,
+  "package_id": "dr-oetker-pizza-wheel",
+  "version": "1.0.0",
+  "display_name": "Dr. Oetker Pizza Wheel",
+  "campaign_short_code": "DOPW",
+  "runtime_contract_version": "1",
+  "min_runtime_version": "0.1.0",
+  "min_player_version": "0.1.0",
+  "orientation": "landscape",
+  "resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "bridge_capabilities": [
+    "recordTelemetry",
+    "requestPrint",
+    "complete",
+    "fail",
+    "getScheduleContext",
+    "getRuntimeCapabilities"
+  ],
+  "entrypoint": "module/index.html",
+  "files": [
+    {
+      "path": "campaign.json",
+      "size_bytes": 3861,
+      "sha256": "2e7779ccbf658cdd1c7d46dd1baba8754a3160aa05c44f43b10a9973995e6b4f",
+      "media_type": "application/json",
+      "role": "config"
+    },
+    {
+      "path": "module/index.html",
+      "size_bytes": 3596,
+      "sha256": "93264300faa7d1d33718c1206ff7cddadae2602d88ce924bddb337218aac989d",
+      "media_type": "text/html",
+      "role": "entrypoint"
+    },
+    {
+      "path": "assets/brand/placeholder.txt",
+      "size_bytes": 157,
+      "sha256": "73ae4fb93d52400cf40c0e56c17aedbaa1958536a4559d86b40b3908fe57d5a9",
+      "media_type": "text/plain",
+      "role": "asset"
+    },
+    {
+      "path": "assets/wheel/pizza-wheel-placeholder.txt",
+      "size_bytes": 142,
+      "sha256": "ff6e128a5b99a99a4634f7be84f57f309dbfcf7b5f8091749487fa0a9f75c374",
+      "media_type": "text/plain",
+      "role": "asset"
+    },
+    {
+      "path": "assets/tickets/discount-ticket-placeholder.txt",
+      "size_bytes": 143,
+      "sha256": "338aed8368136a6fcab25838cb6d17441209e7afe77de4d449c5af9f42e1633a",
+      "media_type": "text/plain",
+      "role": "asset"
+    },
+    {
+      "path": "assets/tickets/consolation-ticket-placeholder.txt",
+      "size_bytes": 115,
+      "sha256": "54a28b716f1e208007d1ed7302ae930708d8362a2ca8a0df222d6021b1d43246",
+      "media_type": "text/plain",
+      "role": "asset"
+    },
+    {
+      "path": "ticket-template/discount-ticket.txt",
+      "size_bytes": 316,
+      "sha256": "0ebd2dcf736c74a06383dc8df10939a72048cbfbe28dfa338cf09cadb03646b8",
+      "media_type": "text/plain",
+      "role": "ticket_template"
+    },
+    {
+      "path": "ticket-template/consolation-qr-ticket.txt",
+      "size_bytes": 406,
+      "sha256": "90cace1d6dde147793e7bae2afa2198dc1ea1dd5ac2d6b6191ebdf3ac801d798",
+      "media_type": "text/plain",
+      "role": "ticket_template"
+    },
+    {
+      "path": "ticket-template/soft-loss-example.txt",
+      "size_bytes": 462,
+      "sha256": "b264d5a8a876b0b0b8f2ccbb592822f3df825711f0987ec8c8e121911fff20c0",
+      "media_type": "text/plain",
+      "role": "ticket_template"
+    },
+    {
+      "path": "legal/terms.txt",
+      "size_bytes": 343,
+      "sha256": "b8ccfa5df9b8839be1546ec935fbe9325dc8c235cd690574db1e79df66d0b8b1",
+      "media_type": "text/plain",
+      "role": "legal"
+    },
+    {
+      "path": "legal/privacy.txt",
+      "size_bytes": 268,
+      "sha256": "6fe829f87c618acbe5e7748972e08c30c6f2ef278803cd8fd1237c3c467c4d8a",
+      "media_type": "text/plain",
+      "role": "legal"
+    }
+  ],
+  "ticket_template": {
+    "path": "ticket-template/discount-ticket.txt",
+    "qr_enabled": true
+  },
+  "quiz": {
+    "question": {
+      "fr-BE": "Quel produit correspond à une pizza Dr. Oetker ?",
+      "nl-BE": "Welk product hoort bij een Dr. Oetker pizza?"
+    },
+    "choices": [
+      {
+        "choice_id": "ristorante-pizza",
+        "label": {
+          "fr-BE": "Une pizza Ristorante",
+          "nl-BE": "Een Ristorante pizza"
+        },
+        "correct": true
+      },
+      {
+        "choice_id": "soft-drink",
+        "label": {
+          "fr-BE": "Une boisson pétillante",
+          "nl-BE": "Een frisdrank"
+        },
+        "correct": false
+      },
+      {
+        "choice_id": "laundry-tabs",
+        "label": {
+          "fr-BE": "Des capsules de lessive",
+          "nl-BE": "Wascapsules"
+        },
+        "correct": false
+      }
+    ],
+    "attempt_limit": 2,
+    "retry_copy": {
+      "fr-BE": "Presque ! Essayez encore.",
+      "nl-BE": "Bijna! Probeer opnieuw."
+    },
+    "failed_copy": {
+      "fr-BE": "Dommage, ce n’est pas la bonne réponse. Merci de votre participation.",
+      "nl-BE": "Jammer, dat is niet het juiste antwoord. Bedankt voor uw deelname."
+    }
+  },
+  "bitmap_assets": [
+    {
+      "asset_id": "pizza-wheel-placeholder",
+      "path": "assets/wheel/pizza-wheel-placeholder.txt"
+    },
+    {
+      "asset_id": "discount-ticket-placeholder",
+      "path": "assets/tickets/discount-ticket-placeholder.txt"
+    },
+    {
+      "asset_id": "consolation-ticket-placeholder",
+      "path": "assets/tickets/consolation-ticket-placeholder.txt"
+    }
+  ],
+  "ticket_templates": [
+    {
+      "template_id": "discount-ticket",
+      "path": "ticket-template/discount-ticket.txt",
+      "bitmap_asset_id": "discount-ticket-placeholder"
+    },
+    {
+      "template_id": "consolation-qr-ticket",
+      "path": "ticket-template/consolation-qr-ticket.txt",
+      "bitmap_asset_id": "consolation-ticket-placeholder"
+    },
+    {
+      "template_id": "soft-loss-example",
+      "path": "ticket-template/soft-loss-example.txt"
+    }
+  ],
+  "outcome_strategy": {
+    "authority": "local_backend",
+    "offline_required": true,
+    "selection": "weighted_random",
+    "outcomes": [
+      {
+        "outcome_id": "small-discount",
+        "outcome_type": "win",
+        "active": true,
+        "localized_label": {
+          "fr-BE": "Petite réduction pizza",
+          "nl-BE": "Kleine pizzakorting"
+        },
+        "weight": 45,
+        "daily_cap": 250,
+        "print_ticket": true,
+        "ticket_template_id": "discount-ticket",
+        "bitmap_asset_id": "discount-ticket-placeholder",
+        "qr_payload_template": "https://promo.acmea.tech/r/{{ticket_code}}",
+        "cashier_instruction": {
+          "fr-BE": "Présentez ce ticket à la caisse.",
+          "nl-BE": "Toon dit ticket aan de kassa."
+        },
+        "terms": {
+          "fr-BE": "Valable aujourd’hui dans le magasin participant.",
+          "nl-BE": "Vandaag geldig in de deelnemende winkel."
+        }
+      },
+      {
+        "outcome_id": "standard-discount",
+        "outcome_type": "win",
+        "active": true,
+        "localized_label": {
+          "fr-BE": "Réduction pizza standard",
+          "nl-BE": "Standaard pizzakorting"
+        },
+        "weight": 30,
+        "daily_cap": 150,
+        "print_ticket": true,
+        "ticket_template_id": "discount-ticket",
+        "bitmap_asset_id": "discount-ticket-placeholder",
+        "qr_payload_template": "https://promo.acmea.tech/r/{{ticket_code}}",
+        "cashier_instruction": {
+          "fr-BE": "Présentez ce ticket à la caisse.",
+          "nl-BE": "Toon dit ticket aan de kassa."
+        },
+        "terms": {
+          "fr-BE": "Valable aujourd’hui dans le magasin participant.",
+          "nl-BE": "Vandaag geldig in de deelnemende winkel."
+        }
+      },
+      {
+        "outcome_id": "consolation-qr",
+        "outcome_type": "consolation",
+        "active": true,
+        "localized_label": {
+          "fr-BE": "Merci — scannez votre souvenir",
+          "nl-BE": "Bedankt — scan uw aandenken"
+        },
+        "weight": 20,
+        "print_ticket": true,
+        "ticket_template_id": "consolation-qr-ticket",
+        "bitmap_asset_id": "consolation-ticket-placeholder",
+        "qr_payload_template": "https://promo.acmea.tech/r/{{ticket_code}}",
+        "cashier_instruction": {
+          "fr-BE": "Scannez le QR ou encodez le code lisible sur le ticket.",
+          "nl-BE": "Scan de QR of voer de leesbare code op het ticket in."
+        },
+        "terms": {
+          "fr-BE": "Souvenir promotionnel sans valeur monétaire.",
+          "nl-BE": "Promotioneel aandenken zonder geldwaarde."
+        }
+      },
+      {
+        "outcome_id": "soft-thanks-no-print",
+        "outcome_type": "loss",
+        "active": true,
+        "localized_label": {
+          "fr-BE": "Merci de votre participation",
+          "nl-BE": "Bedankt voor uw deelname"
+        },
+        "weight": 5,
+        "print_ticket": false,
+        "cashier_instruction": {
+          "fr-BE": "Aucune action caisse.",
+          "nl-BE": "Geen kassahandeling."
+        },
+        "terms": {
+          "fr-BE": "Aucun ticket imprimé pour ce résultat.",
+          "nl-BE": "Geen ticket afgedrukt voor dit resultaat."
+        }
+      }
+    ]
+  },
+  "visual_wheel": {
+    "segments": [
+      {
+        "segment_id": "slice-small-one",
+        "outcome_id": "small-discount",
+        "bitmap_asset_id": "pizza-wheel-placeholder",
+        "localized_label": {
+          "fr-BE": "Petite réduction",
+          "nl-BE": "Kleine korting"
+        }
+      },
+      {
+        "segment_id": "slice-standard-one",
+        "outcome_id": "standard-discount",
+        "bitmap_asset_id": "pizza-wheel-placeholder",
+        "localized_label": {
+          "fr-BE": "Réduction standard",
+          "nl-BE": "Standaard korting"
+        }
+      },
+      {
+        "segment_id": "slice-consolation-one",
+        "outcome_id": "consolation-qr",
+        "bitmap_asset_id": "pizza-wheel-placeholder",
+        "localized_label": {
+          "fr-BE": "Merci",
+          "nl-BE": "Bedankt"
+        }
+      },
+      {
+        "segment_id": "slice-small-two",
+        "outcome_id": "small-discount",
+        "bitmap_asset_id": "pizza-wheel-placeholder",
+        "localized_label": {
+          "fr-BE": "Petite réduction",
+          "nl-BE": "Kleine korting"
+        }
+      },
+      {
+        "segment_id": "slice-soft-thanks",
+        "outcome_id": "soft-thanks-no-print",
+        "bitmap_asset_id": "pizza-wheel-placeholder",
+        "localized_label": {
+          "fr-BE": "Merci",
+          "nl-BE": "Bedankt"
+        }
+      },
+      {
+        "segment_id": "slice-standard-two",
+        "outcome_id": "standard-discount",
+        "bitmap_asset_id": "pizza-wheel-placeholder",
+        "localized_label": {
+          "fr-BE": "Réduction standard",
+          "nl-BE": "Standaard korting"
+        }
+      }
+    ]
+  },
+  "legal": {
+    "terms_path": "legal/terms.txt",
+    "privacy_path": "legal/privacy.txt"
+  },
+  "package_size_limit_bytes": 262144000
+}

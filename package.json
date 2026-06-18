@@ -14,7 +14,7 @@
     "typecheck": "pnpm -r --sort typecheck",
     "test": "pnpm -r --sort test",
     "ci": "pnpm install --frozen-lockfile && pnpm typecheck && pnpm test && pnpm build",
-    "package:validate": "pnpm --filter @retail-kiosk/campaign-schema build && node packages/campaign-schema/scripts/validate-manifest.mjs campaigns/chocomel/manifest.json --root campaigns/chocomel",
+    "package:validate": "pnpm --filter @retail-kiosk/campaign-schema build && node packages/campaign-schema/scripts/validate-manifest.mjs campaigns/chocomel/manifest.json --root campaigns/chocomel && node packages/campaign-schema/scripts/validate-manifest.mjs campaigns/dr-oetker-pizza-wheel/manifest.json --root campaigns/dr-oetker-pizza-wheel",
     "db:generate:local": "drizzle-kit generate --config services/local-backend/drizzle.local.config.ts",
     "db:generate:central": "drizzle-kit generate --config services/central-api/drizzle.central.config.ts",
     "db:check:local": "drizzle-kit check --config services/local-backend/drizzle.local.config.ts",

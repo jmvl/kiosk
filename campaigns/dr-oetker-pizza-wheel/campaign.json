@@ -1,0 +1,127 @@
+{
+  "id": "dr-oetker-pizza-wheel-2026",
+  "slug": "dr-oetker-pizza-wheel",
+  "name": "Dr. Oetker Pizza Wheel",
+  "brandName": "Dr. Oetker Pizza",
+  "gameTemplate": "spin-wheel",
+  "defaultLocale": "fr-BE",
+  "supportedLocales": ["fr-BE", "nl-BE"],
+  "status": "draft",
+  "assetRights": {
+    "status": "prototype-placeholders-only",
+    "note": "No real Dr. Oetker logos, product photos, bitmap art, or approved brand assets are included. Replace placeholders only after rights/source approval is documented."
+  },
+  "copy": {
+    "fr-BE": {
+      "attractHeadline": "Tournez la roue pizza",
+      "attractSubheadline": "Répondez à une question et tentez de gagner un avantage pizza.",
+      "insertTokenCta": "Insérez votre jeton de participation",
+      "questionIntro": "Question concours",
+      "spinCta": "Faire tourner la roue",
+      "retry": "Presque ! Essayez encore.",
+      "failed": "Dommage, ce n’est pas la bonne réponse. Merci de votre participation.",
+      "resetMessage": "Merci et bonne dégustation."
+    },
+    "nl-BE": {
+      "attractHeadline": "Draai aan het pizzawiel",
+      "attractSubheadline": "Beantwoord een vraag en maak kans op een pizzavoordeel.",
+      "insertTokenCta": "Steek uw deelnamejeton in",
+      "questionIntro": "Wedstrijdvraag",
+      "spinCta": "Draai aan het wiel",
+      "retry": "Bijna! Probeer opnieuw.",
+      "failed": "Jammer, dat is niet het juiste antwoord. Bedankt voor uw deelname.",
+      "resetMessage": "Bedankt en smakelijk."
+    }
+  },
+  "quiz": {
+    "attemptLimit": 2,
+    "question": {
+      "fr-BE": "Quel produit correspond à une pizza Dr. Oetker ?",
+      "nl-BE": "Welk product hoort bij een Dr. Oetker pizza?"
+    },
+    "choices": [
+      {
+        "id": "ristorante-pizza",
+        "label": {
+          "fr-BE": "Une pizza Ristorante",
+          "nl-BE": "Een Ristorante pizza"
+        },
+        "correct": true
+      },
+      {
+        "id": "soft-drink",
+        "label": {
+          "fr-BE": "Une boisson pétillante",
+          "nl-BE": "Een frisdrank"
+        },
+        "correct": false
+      },
+      {
+        "id": "laundry-tabs",
+        "label": {
+          "fr-BE": "Des capsules de lessive",
+          "nl-BE": "Wascapsules"
+        },
+        "correct": false
+      }
+    ]
+  },
+  "outcomes": [
+    {
+      "id": "small-discount",
+      "type": "win",
+      "weight": 45,
+      "printTicket": true,
+      "ticketTemplateId": "discount-ticket",
+      "label": {
+        "fr-BE": "Petite réduction pizza",
+        "nl-BE": "Kleine pizzakorting"
+      }
+    },
+    {
+      "id": "standard-discount",
+      "type": "win",
+      "weight": 30,
+      "printTicket": true,
+      "ticketTemplateId": "discount-ticket",
+      "label": {
+        "fr-BE": "Réduction pizza standard",
+        "nl-BE": "Standaard pizzakorting"
+      }
+    },
+    {
+      "id": "consolation-qr",
+      "type": "consolation",
+      "weight": 20,
+      "printTicket": true,
+      "ticketTemplateId": "consolation-qr-ticket",
+      "label": {
+        "fr-BE": "Merci — scannez votre souvenir",
+        "nl-BE": "Bedankt — scan uw aandenken"
+      }
+    },
+    {
+      "id": "soft-thanks-no-print",
+      "type": "loss",
+      "weight": 5,
+      "printTicket": false,
+      "label": {
+        "fr-BE": "Merci de votre participation",
+        "nl-BE": "Bedankt voor uw deelname"
+      }
+    }
+  ],
+  "theme": {
+    "primaryColor": "#D84624",
+    "secondaryColor": "#FFF3D5",
+    "accentColor": "#2F7D32",
+    "backgroundColor": "#FFF8EC",
+    "textColor": "#3B1F12",
+    "fontFamily": "Inter, system-ui, sans-serif"
+  },
+  "legalNotes": [
+    "Framed as a concours/wedstrijd promotional activation, not casino mechanics.",
+    "Outcome authority and ticket code generation stay in the local backend.",
+    "Prototype placeholders must be replaced with approved assets before production."
+  ]
+}

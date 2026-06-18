@@ -1,0 +1,13 @@
+DR. OETKER PIZZA WHEEL — {{localized_label}}
+
+This template is intentionally present as a validation/example scaffold for a configurable soft-loss ticket. The seeded soft-loss outcome is no-print.
+
+FR-BE
+Code ticket: {{ticket_code}}
+QR: {{qr_payload}}
+Instruction caisse: Aucun avantage à appliquer sauf configuration contraire.
+
+NL-BE
+Ticketcode: {{ticket_code}}
+QR: {{qr_payload}}
+Kassa-instructie: Geen voordeel toe te passen tenzij anders geconfigureerd.

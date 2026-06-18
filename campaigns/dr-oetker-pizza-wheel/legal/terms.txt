@@ -1,0 +1,5 @@
+Prototype terms placeholder.
+
+FR-BE: Offre de démonstration valable selon les conditions du magasin et de la campagne pilote. Présentez le ticket le jour même, sauf configuration contraire.
+
+NL-BE: Demo-aanbieding geldig volgens de voorwaarden van de winkel en de pilootcampagne. Toon het ticket dezelfde dag, tenzij anders geconfigureerd.

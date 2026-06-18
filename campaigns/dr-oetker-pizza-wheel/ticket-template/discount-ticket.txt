@@ -1,0 +1,13 @@
+DR. OETKER PIZZA WHEEL — {{localized_label}}
+
+FR-BE
+Code ticket: {{ticket_code}}
+QR: {{qr_payload}}
+Instruction caisse: Présentez ce ticket à la caisse.
+Conditions: {{terms.fr-BE}}
+
+NL-BE
+Ticketcode: {{ticket_code}}
+QR: {{qr_payload}}
+Kassa-instructie: Toon dit ticket aan de kassa.
+Voorwaarden: {{terms.nl-BE}}

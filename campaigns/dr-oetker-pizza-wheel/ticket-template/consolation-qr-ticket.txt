@@ -1,0 +1,13 @@
+DR. OETKER PIZZA WHEEL — {{localized_label}}
+
+FR-BE
+Code ticket: {{ticket_code}}
+QR: {{qr_payload}}
+Instruction caisse: Scannez le QR ou encodez le code lisible ci-dessus pour valider l'avantage.
+Conditions: {{terms.fr-BE}}
+
+NL-BE
+Ticketcode: {{ticket_code}}
+QR: {{qr_payload}}
+Kassa-instructie: Scan de QR of voer de leesbare code hierboven in om het voordeel te valideren.
+Voorwaarden: {{terms.nl-BE}}

@@ -1,0 +1,2 @@
+Prototype ticket bitmap placeholder for discount outcomes.
+Expected production replacement: approved thermal-printer bitmap header/background.
