@@ -24,6 +24,8 @@ export interface SessionSnapshot {
   package_id: string;
   package_version: string;
   state: SessionState;
+  session_language?: 'fr-BE' | 'nl-BE';
+  quiz_attempts?: number;
   started_at: string;
   updated_at: string;
   completed_at?: string;

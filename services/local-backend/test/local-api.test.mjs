@@ -8,6 +8,7 @@ import {
   createLocalBackendServer,
   createSession,
   createTicket,
+  appendEvent,
   CupsPrinterAdapter,
   collectAdminTelemetry,
   FakePrinterAdapter,
@@ -212,6 +213,49 @@ describe('local backend admin telemetry', () => {
     }
   });
 });
+
+function campaignRuntimePayload() {
+  return {
+    campaign_short_code: 'DOW',
+    quiz: {
+      question: { 'fr-BE': 'Question FR?', 'nl-BE': 'Vraag NL?' },
+      choices: [
+        { choice_id: 'right', label: { 'fr-BE': 'Oui', 'nl-BE': 'Ja' }, correct: true },
+        { choice_id: 'wrong-a', label: { 'fr-BE': 'Non', 'nl-BE': 'Nee' }, correct: false },
+        { choice_id: 'wrong-b', label: { 'fr-BE': 'Peut-être', 'nl-BE': 'Misschien' }, correct: false },
+      ],
+      attempt_limit: 2,
+    },
+    ticket_templates: [{ template_id: 'voucher-v1', path: 'ticket-template/voucher.txt', bitmap_asset_id: 'ticket-bitmap' }],
+    outcome_strategy: {
+      authority: 'local_backend',
+      offline_required: true,
+      selection: 'weighted_random',
+      outcomes: [{
+        outcome_id: 'free-pizza',
+        outcome_type: 'win',
+        active: true,
+        localized_label: { 'fr-BE': 'Pizza gratuite', 'nl-BE': 'Gratis pizza' },
+        weight: 1,
+        print_ticket: true,
+        ticket_template_id: 'voucher-v1',
+        bitmap_asset_id: 'ticket-bitmap',
+        qr_payload_template: 'https://promo.example.test/r/{{ticket_code}}',
+        cashier_instruction: { 'fr-BE': 'Scannez ce ticket FR', 'nl-BE': 'Scan dit ticket NL' },
+        terms: { 'fr-BE': 'Valable en Belgique FR', 'nl-BE': 'Geldig in België NL' },
+      }],
+    },
+  };
+}
+
+function seedActiveCampaign(runtime, payload = campaignRuntimePayload()) {
+  const now = new Date().toISOString();
+  runtime.db.prepare(`INSERT INTO schedules (schedule_id, status, timezone, activation_mode, package_id, package_version, module_id, module_version, validation_status, cache_status, created_at, updated_at)
+    VALUES ('campaign-runtime', 'draft', 'Europe/Brussels', 'scheduled', 'dr-oetker-pizza-wheel', '1.0.0', 'pizza-wheel', '1.0.0', 'valid', 'cached', ?, ?)`).run(now, now);
+  runtime.db.prepare(`INSERT INTO schedule_slots (slot_id, schedule_id, position, starts_at, ends_at, package_id, package_version, module_id, module_version, cache_status, payload)
+    VALUES ('campaign-runtime-primary', 'campaign-runtime', 0, '2000-01-01T00:00:00.000Z', '2999-01-01T00:00:00.000Z', 'dr-oetker-pizza-wheel', '1.0.0', 'pizza-wheel', '1.0.0', 'cached', ?)`).run(JSON.stringify(payload));
+  runtime.db.prepare("UPDATE runtime_state SET schedule_version = 'campaign-runtime', active_package_id = 'dr-oetker-pizza-wheel', active_package_version = '1.0.0' WHERE id = 1").run();
+}
 
 function validScheduleDraft(overrides = {}) {
   return {
@@ -463,6 +507,74 @@ describe('local backend fake hardware API', () => {
       assert.equal(run.error, null);
       assert.ok(run.duration_ms >= 0);
       assert.ok(run.ended_at);
+    } finally {
+      await app.close();
+    }
+  });
+
+
+  it('keeps quiz language locked and resets without reward after two wrong answers', async () => {
+    const { app, runtime, auth } = await testServer({ packageId: 'dr-oetker-pizza-wheel', packageVersion: '1.0.0', campaignShortCode: 'DOW' });
+    seedActiveCampaign(runtime);
+    try {
+      await app.inject({ method: 'POST', url: '/dev/token', headers: auth, payload: { denomination_cents: 100 } });
+      const first = await app.inject({ method: 'POST', url: '/quiz/answer', headers: auth, payload: { language: 'fr-BE', choice_id: 'wrong-a' } });
+      assert.equal(first.statusCode, 200);
+      assert.equal(first.json().quiz.retry, true);
+      assert.equal(first.json().state.current_session.session_language, 'fr-BE');
+      const second = await app.inject({ method: 'POST', url: '/quiz/answer', headers: auth, payload: { language: 'nl-BE', choice_id: 'wrong-b' } });
+      assert.equal(second.statusCode, 200);
+      assert.equal(second.json().state.runtime.mode, 'idle');
+      assert.equal(second.json().state.current_session, null);
+      assert.equal(runtime.db.prepare('select count(*) as count from tickets').get().count, 0);
+      assert.equal(runtime.db.prepare('select session_language from sessions limit 1').get().session_language, 'fr-BE');
+      assert.ok(runtime.db.prepare("select event_type from events where event_type = 'session_completed_no_reward'").get());
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('uses FR and NL session language in backend-selected outcome ticket render payloads', async () => {
+    const { app, runtime, auth } = await testServer({ packageId: 'dr-oetker-pizza-wheel', packageVersion: '1.0.0', campaignShortCode: 'DOW' });
+    seedActiveCampaign(runtime);
+    try {
+      for (const language of ['fr-BE', 'nl-BE']) {
+        await app.inject({ method: 'POST', url: '/dev/token', headers: auth, payload: { denomination_cents: 100, language } });
+        const answer = await app.inject({ method: 'POST', url: '/quiz/answer', headers: auth, payload: { language, choice_id: 'right' } });
+        assert.equal(answer.statusCode, 200);
+        const spin = await app.inject({ method: 'POST', url: '/spin/start', headers: auth, payload: {} });
+        assert.equal(spin.statusCode, 200);
+        const body = spin.json();
+        assert.equal(body.ticket.render_payload.language, language);
+        assert.equal(body.ticket.render_payload.ticket_template_id, 'voucher-v1');
+        assert.equal(body.ticket.render_payload.bitmap_asset_id, 'ticket-bitmap');
+        assert.equal(body.ticket.render_payload.qr_payload, `https://promo.example.test/r/${body.ticket.ticket_code}`);
+        assert.equal(body.ticket.render_payload.cashier_instruction, language === 'fr-BE' ? 'Scannez ce ticket FR' : 'Scan dit ticket NL');
+      }
+      assert.equal(runtime.db.prepare('select count(*) as count from tickets').get().count, 2);
+      assert.equal(runtime.db.prepare("select count(*) as count from events where event_type = 'outcome_selected'").get().count, 2);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('skips capped weighted outcomes at spin start', async () => {
+    const cappedCampaign = structuredClone(campaignRuntimePayload());
+    const baseOutcome = cappedCampaign.outcome_strategy.outcomes[0];
+    cappedCampaign.outcome_strategy.outcomes = [
+      { ...baseOutcome, outcome_id: 'free-pizza', weight: 999, inventory_cap: 1 },
+      { ...baseOutcome, outcome_id: 'slice-coupon', localized_label: { 'fr-BE': 'Part de pizza', 'nl-BE': 'Pizzapunt' }, weight: 1 },
+    ];
+    const { app, runtime, auth } = await testServer({ packageId: 'dr-oetker-pizza-wheel', packageVersion: '1.0.0', campaignShortCode: 'DOW' });
+    seedActiveCampaign(runtime, cappedCampaign);
+    appendEvent(runtime.db, { kioskId: 'HQ001', eventType: 'outcome_selected', payload: { outcome_id: 'free-pizza' } });
+    try {
+      await app.inject({ method: 'POST', url: '/dev/token', headers: auth, payload: { denomination_cents: 100 } });
+      await app.inject({ method: 'POST', url: '/quiz/answer', headers: auth, payload: { language: 'fr-BE', choice_id: 'right' } });
+      const spin = await app.inject({ method: 'POST', url: '/spin/start', headers: auth, payload: {} });
+      assert.equal(spin.statusCode, 200);
+      assert.equal(spin.json().outcome.outcome_id, 'slice-coupon');
+      assert.equal(spin.json().ticket.render_payload.outcome_id, 'slice-coupon');
     } finally {
       await app.close();
     }

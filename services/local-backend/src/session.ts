@@ -42,6 +42,8 @@ interface SessionRow {
   package_id: string;
   package_version: string;
   state: SessionState;
+  session_language: 'fr-BE' | 'nl-BE' | null;
+  quiz_attempts: number;
   started_at: string;
   updated_at: string;
   completed_at: string | null;
@@ -65,6 +67,8 @@ function snapshotFromRow(row: SessionRow): SessionSnapshot {
     package_id: row.package_id,
     package_version: row.package_version,
     state: row.state,
+    ...(row.session_language === null ? {} : { session_language: row.session_language }),
+    quiz_attempts: row.quiz_attempts,
     started_at: row.started_at,
     updated_at: row.updated_at,
     ...(row.completed_at === null ? {} : { completed_at: row.completed_at }),
@@ -81,7 +85,7 @@ export function getSession(db: LocalDatabase, sessionId: string): SessionSnapsho
 export function createSession(db: LocalDatabase, input: CreateSessionInput): SessionSnapshot {
   const tx = db.transaction(() => {
     const existingActive = db.prepare(
-      `SELECT session_id, kiosk_id, package_id, package_version, state, started_at, updated_at, completed_at, last_error
+      `SELECT session_id, kiosk_id, package_id, package_version, state, session_language, quiz_attempts, started_at, updated_at, completed_at, last_error
        FROM sessions
        WHERE state IN (${Array.from(activeSessionStates).map(() => '?').join(', ')})
        ORDER BY updated_at DESC
@@ -94,7 +98,7 @@ export function createSession(db: LocalDatabase, input: CreateSessionInput): Ses
     const runtime = db.prepare('SELECT current_session_id FROM runtime_state WHERE id = 1').get() as { current_session_id: string | null } | undefined;
     if (runtime?.current_session_id) {
       const current = db.prepare(
-        `SELECT session_id, kiosk_id, package_id, package_version, state, started_at, updated_at, completed_at, last_error
+        `SELECT session_id, kiosk_id, package_id, package_version, state, session_language, quiz_attempts, started_at, updated_at, completed_at, last_error
          FROM sessions
          WHERE session_id = ?`,
       ).get(runtime.current_session_id) as SessionRow | undefined;
@@ -105,8 +109,8 @@ export function createSession(db: LocalDatabase, input: CreateSessionInput): Ses
 
     const now = new Date().toISOString();
     const sessionId = generateUlid();
-    db.prepare(`INSERT INTO sessions (session_id, kiosk_id, package_id, package_version, state, token_payload, started_at, updated_at)
-      VALUES (?, ?, ?, ?, 'token_received', ?, ?, ?)`).run(
+    db.prepare(`INSERT INTO sessions (session_id, kiosk_id, package_id, package_version, state, quiz_attempts, token_payload, started_at, updated_at)
+      VALUES (?, ?, ?, ?, 'token_received', 0, ?, ?, ?)`).run(
       sessionId,
       input.kioskId,
       input.packageId,
@@ -129,6 +133,15 @@ export function createSession(db: LocalDatabase, input: CreateSessionInput): Ses
       payload: { package_id: input.packageId, package_version: input.packageVersion, token: input.tokenPayload ?? null },
       occurredAt: now,
     });
+    if (input.tokenPayload?.token_required !== false) {
+      appendEvent(db, {
+        kioskId: input.kioskId,
+        sessionId,
+        eventType: 'token_inserted',
+        payload: { package_id: input.packageId, package_version: input.packageVersion, token: input.tokenPayload ?? null },
+        occurredAt: now,
+      });
+    }
     return getSession(db, sessionId);
   });
   return tx();

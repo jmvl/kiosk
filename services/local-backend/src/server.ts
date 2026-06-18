@@ -14,6 +14,7 @@ import { activeRuntimeModule, activatePendingScheduleAtSafeBoundary, getSchedule
 import { createTicket } from './tickets.js';
 import { collectAdminTelemetry } from './telemetry.js';
 import { listGameRunLog } from './game-runs.js';
+import { buildTicketRenderPayload, campaignConfigFromPayload, isSessionLanguage, printRequestPayload, selectWeightedOutcome, submitQuizAnswer } from './game-flow.js';
 
 export interface LocalBackendConfig {
   kioskId: string;
@@ -261,7 +262,14 @@ function startSession(runtime: LocalBackendRuntime, triggerPayload: Record<strin
     tokenPayload: triggerPayload,
   });
   const starting = transitionSession(runtime.db, session.session_id, 'session_starting');
-  return transitionSession(runtime.db, starting.session_id, 'playing');
+  const playing = transitionSession(runtime.db, starting.session_id, 'playing');
+  appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: playing.session_id, eventType: 'session_started', payload: { package_id: playing.package_id, package_version: playing.package_version } });
+  return playing;
+}
+
+function activeCampaignConfig(runtime: LocalBackendRuntime): ReturnType<typeof campaignConfigFromPayload> {
+  const activeModule = activeRuntimeModule(runtime.db, { packageId: runtime.config.packageId, packageVersion: runtime.config.packageVersion });
+  return campaignConfigFromPayload(activeModule.payload);
 }
 
 const staticContentTypes: Record<string, string> = {
@@ -328,18 +336,7 @@ export async function createLocalBackendServer(runtime = createLocalBackendRunti
 
   runtime.tokenAdapter.onToken?.((token) => {
     try {
-      const activeModule = activeRuntimeModule(runtime.db, { packageId: runtime.config.packageId, packageVersion: runtime.config.packageVersion });
-      createSession(runtime.db, {
-        kioskId: runtime.config.kioskId,
-        packageId: activeModule.package_id,
-        packageVersion: activeModule.package_version,
-        tokenPayload: token as unknown as Record<string, unknown>,
-      });
-      const runtimeState = readRuntimeState(runtime.db);
-      if (runtimeState.current_session_id) {
-        const starting = transitionSession(runtime.db, runtimeState.current_session_id, 'session_starting');
-        transitionSession(runtime.db, starting.session_id, 'playing');
-      }
+      startSession(runtime, token as unknown as Record<string, unknown>);
       broadcastState();
     } catch (error) {
       appendEvent(runtime.db, {
@@ -434,6 +431,73 @@ export async function createLocalBackendServer(runtime = createLocalBackendRunti
     const playing = startSession(runtime, { trigger, token_required: false, source: body.source ?? 'admin-ui', fake: true });
     broadcastState();
     return reply.code(201).send({ session: playing, state: stateSnapshot(runtime) });
+  });
+
+
+  app.post('/quiz/answer', async (request, reply) => {
+    const runtimeState = readRuntimeState(runtime.db);
+    if (!runtimeState.current_session_id) return reply.code(409).send({ error: 'no_active_session' });
+    const body = typeof request.body === 'object' && request.body !== null ? request.body as Record<string, unknown> : {};
+    if (!isSessionLanguage(body.language)) return reply.code(400).send({ error: 'invalid_session_language' });
+    if (typeof body.choice_id !== 'string') return reply.code(400).send({ error: 'invalid_choice_id' });
+    try {
+      const result = submitQuizAnswer(runtime.db, { kioskId: runtime.config.kioskId, sessionId: runtimeState.current_session_id, language: body.language, choiceId: body.choice_id, campaign: activeCampaignConfig(runtime) });
+      if (result.completed_no_reward) activatePendingScheduleAtSafeBoundary(runtime.db, { kioskId: runtime.config.kioskId });
+      broadcastState();
+      return reply.send({ quiz: result, state: stateSnapshot(runtime) });
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : 'quiz_answer_failed' });
+    }
+  });
+
+  app.post('/spin/start', async (_request, reply) => {
+    const runtimeState = readRuntimeState(runtime.db);
+    if (!runtimeState.current_session_id) return reply.code(409).send({ error: 'no_active_session' });
+    const current = getSession(runtime.db, runtimeState.current_session_id);
+    if (current.state !== 'playing') return reply.code(409).send({ error: 'session_not_ready_for_spin', state: current.state });
+    const language = current.session_language;
+    if (!isSessionLanguage(language)) return reply.code(409).send({ error: 'session_language_not_locked' });
+    const campaign = activeCampaignConfig(runtime);
+    try {
+      appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: current.session_id, eventType: 'spin_started', payload: { language } });
+      const outcome = selectWeightedOutcome(runtime.db, campaign.outcome_strategy?.outcomes ?? []);
+      appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: current.session_id, eventType: 'outcome_selected', payload: { outcome_id: outcome.outcome_id, outcome_type: outcome.outcome_type, weight: outcome.weight } });
+      const ready = transitionSession(runtime.db, current.session_id, 'result_pending', { resultPayload: { language, outcome_id: outcome.outcome_id, outcome_type: outcome.outcome_type, print_ticket: outcome.print_ticket } });
+      appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: current.session_id, eventType: 'prize_revealed', payload: { outcome_id: outcome.outcome_id } });
+      if (!outcome.print_ticket) {
+        const completed = transitionSession(runtime.db, ready.session_id, 'completed');
+        transitionSession(runtime.db, completed.session_id, 'resetting');
+        const idle = transitionSession(runtime.db, completed.session_id, 'idle');
+        appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: ready.session_id, eventType: 'session_reset', payload: { reason: 'spin_completed_no_ticket' } });
+        activatePendingScheduleAtSafeBoundary(runtime.db, { kioskId: runtime.config.kioskId });
+        broadcastState();
+        return reply.send({ outcome, session: idle, state: stateSnapshot(runtime) });
+      }
+      transitionSession(runtime.db, ready.session_id, 'print_requested');
+      appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: ready.session_id, eventType: 'ticket_print_requested', payload: { outcome_id: outcome.outcome_id } });
+      transitionSession(runtime.db, ready.session_id, 'printing');
+      const basePayload = buildTicketRenderPayload({ sessionId: ready.session_id, language, outcome });
+      const ticket = createTicket(runtime.db, { kioskId: runtime.config.kioskId, kioskShortId: runtime.config.kioskId, sessionId: ready.session_id, packageId: current.package_id, packageVersion: current.package_version, campaignShortCode: campaign.campaign_short_code ?? runtime.config.campaignShortCode, renderPayload: basePayload, secret: runtime.config.ticketSecret });
+      ticket.render_payload = buildTicketRenderPayload({ sessionId: ready.session_id, language, outcome, ticketCode: ticket.ticket_code });
+      runtime.db.prepare('UPDATE tickets SET render_payload = ? WHERE ticket_id = ?').run(JSON.stringify(ticket.render_payload), ticket.ticket_id);
+      const print = await runtime.printerAdapter.printTicket(runtime.db, ticket, printRequestPayload(ticket.ticket_code, ticket.render_payload));
+      if (print.status === 'print_failed') {
+        appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: ready.session_id, eventType: 'ticket_print_failed', payload: { ticket_id: ticket.ticket_id, ticket_code: ticket.ticket_code, error_message: print.error_message ?? null } });
+        const degraded = transitionSession(runtime.db, ready.session_id, 'degraded_printer', { lastError: print.error_message ?? 'print_failed' });
+        broadcastState();
+        return reply.send({ outcome, ticket, print, session: degraded, state: stateSnapshot(runtime) });
+      }
+      appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: ready.session_id, eventType: 'ticket_print_success', payload: { ticket_id: ticket.ticket_id, ticket_code: ticket.ticket_code } });
+      const completed = transitionSession(runtime.db, ready.session_id, 'completed');
+      transitionSession(runtime.db, completed.session_id, 'resetting');
+      const idle = transitionSession(runtime.db, completed.session_id, 'idle');
+      appendEvent(runtime.db, { kioskId: runtime.config.kioskId, sessionId: ready.session_id, eventType: 'session_reset', payload: { reason: 'spin_completed' } });
+      activatePendingScheduleAtSafeBoundary(runtime.db, { kioskId: runtime.config.kioskId });
+      broadcastState();
+      return reply.send({ outcome, ticket, print, session: idle, state: stateSnapshot(runtime) });
+    } catch (error) {
+      return reply.code(400).send({ error: error instanceof Error ? error.message : 'spin_start_failed' });
+    }
   });
 
   app.post('/session/reset', async (request, reply) => {

@@ -74,6 +74,7 @@ export interface RuntimeModuleSnapshot {
   starts_at: string | null;
   ends_at: string | null;
   activation_mode: ActivationMode;
+  payload: Record<string, unknown>;
 }
 
 export interface RuntimeSchedulerSnapshot {
@@ -312,6 +313,7 @@ function runtimeModuleFromSchedule(schedule: ScheduleSnapshot, slot: ScheduleSlo
     starts_at: slot?.starts_at ?? null,
     ends_at: slot?.ends_at ?? null,
     activation_mode: schedule.activation_mode,
+    payload: slot?.payload ?? {},
   };
 }
 
@@ -398,6 +400,7 @@ export function activeRuntimeModule(db: LocalDatabase, fallback: { packageId: st
     starts_at: null,
     ends_at: null,
     activation_mode: 'immediate',
+    payload: {},
   };
 }
 

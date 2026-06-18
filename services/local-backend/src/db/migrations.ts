@@ -2,6 +2,7 @@ import type { LocalDatabase } from './sqlite.js';
 
 export const migrationName = '0000_i3_runtime_core';
 export const schedulerMigrationName = '0001_scheduler_foundation';
+export const quizRuntimeMigrationName = '0002_quiz_runtime_state';
 
 export const runtimeCoreMigrationSql = String.raw`
 CREATE TABLE IF NOT EXISTS runtime_state (
@@ -153,6 +154,11 @@ CREATE TABLE IF NOT EXISTS schedule_audit_events (
 CREATE INDEX IF NOT EXISTS schedule_audit_events_schedule_idx ON schedule_audit_events(schedule_id);
 `;
 
+export const quizRuntimeMigrationSql = String.raw`
+ALTER TABLE sessions ADD COLUMN session_language TEXT;
+ALTER TABLE sessions ADD COLUMN quiz_attempts INTEGER NOT NULL DEFAULT 0;
+`;
+
 function applyMigration(db: LocalDatabase, name: string, sql: string): void {
   const applied = db.prepare('SELECT name FROM __local_migrations WHERE name = ?').get(name);
   if (applied) return;
@@ -170,4 +176,5 @@ export function migrateDatabase(db: LocalDatabase): void {
   );`);
   applyMigration(db, migrationName, runtimeCoreMigrationSql);
   applyMigration(db, schedulerMigrationName, schedulerMigrationSql);
+  applyMigration(db, quizRuntimeMigrationName, quizRuntimeMigrationSql);
 }
