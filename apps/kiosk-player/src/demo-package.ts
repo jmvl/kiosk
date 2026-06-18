@@ -1,67 +1,194 @@
-export const chocomelManifest = {
-  package_id: 'chocomel-wheel',
+export type CampaignLocale = 'fr-BE' | 'nl-BE';
+
+export interface LocalizedCopy {
+  'fr-BE': string;
+  'nl-BE': string;
+}
+
+export interface CampaignQuizChoice {
+  choice_id: string;
+  label: LocalizedCopy;
+  correct: boolean;
+}
+
+export interface CampaignOutcome {
+  outcome_id: string;
+  outcome_type: 'win' | 'loss' | 'consolation' | 'grand_prize' | 'custom';
+  active: boolean;
+  localized_label: LocalizedCopy;
+  weight: number;
+  print_ticket: boolean;
+  ticket_template_id?: string;
+  bitmap_asset_id?: string;
+  qr_payload_template?: string;
+  cashier_instruction: LocalizedCopy;
+  terms: LocalizedCopy;
+}
+
+export interface VisualWheelSegment {
+  segment_id: string;
+  outcome_id: string;
+  bitmap_asset_id?: string;
+  localized_label?: LocalizedCopy;
+}
+
+export const drOetkerManifest = {
+  package_id: 'dr-oetker-pizza-wheel',
   version: '1.0.0',
-  display_name: 'Chocomel Prize Wheel',
-  bridge_capabilities: ['recordTelemetry', 'requestPrint', 'complete', 'fail', 'getScheduleContext', 'getRuntimeCapabilities'],
+  display_name: 'Dr. Oetker Pizza Wheel',
+  bridge_capabilities: ['recordTelemetry', 'complete', 'fail', 'getScheduleContext', 'getRuntimeCapabilities'],
+  quiz: {
+    question: {
+      'fr-BE': 'Quel produit correspond à une pizza Dr. Oetker ?',
+      'nl-BE': 'Welk product hoort bij een Dr. Oetker pizza?',
+    },
+    choices: [
+      { choice_id: 'ristorante-pizza', label: { 'fr-BE': 'Une pizza Ristorante', 'nl-BE': 'Een Ristorante pizza' }, correct: true },
+      { choice_id: 'soft-drink', label: { 'fr-BE': 'Une boisson pétillante', 'nl-BE': 'Een frisdrank' }, correct: false },
+      { choice_id: 'laundry-tabs', label: { 'fr-BE': 'Des capsules de lessive', 'nl-BE': 'Wascapsules' }, correct: false },
+    ] satisfies CampaignQuizChoice[],
+    attempt_limit: 2,
+    retry_copy: {
+      'fr-BE': 'Presque ! Essayez encore.',
+      'nl-BE': 'Bijna! Probeer opnieuw.',
+    },
+    failed_copy: {
+      'fr-BE': 'Dommage, ce n’est pas la bonne réponse. Merci de votre participation.',
+      'nl-BE': 'Jammer, dat is niet het juiste antwoord. Bedankt voor uw deelname.',
+    },
+  },
+  outcome_strategy: {
+    authority: 'local_backend',
+    offline_required: true,
+    selection: 'weighted_random',
+    outcomes: [
+      {
+        outcome_id: 'small-discount',
+        outcome_type: 'win',
+        active: true,
+        localized_label: { 'fr-BE': 'Petite réduction pizza', 'nl-BE': 'Kleine pizzakorting' },
+        weight: 45,
+        print_ticket: true,
+        ticket_template_id: 'discount-ticket',
+        bitmap_asset_id: 'discount-ticket-placeholder',
+        cashier_instruction: { 'fr-BE': 'Présentez ce ticket à la caisse.', 'nl-BE': 'Toon dit ticket aan de kassa.' },
+        terms: { 'fr-BE': 'Valable aujourd’hui dans le magasin participant.', 'nl-BE': 'Vandaag geldig in de deelnemende winkel.' },
+      },
+      {
+        outcome_id: 'standard-discount',
+        outcome_type: 'win',
+        active: true,
+        localized_label: { 'fr-BE': 'Réduction pizza standard', 'nl-BE': 'Standaard pizzakorting' },
+        weight: 30,
+        print_ticket: true,
+        ticket_template_id: 'discount-ticket',
+        bitmap_asset_id: 'discount-ticket-placeholder',
+        cashier_instruction: { 'fr-BE': 'Présentez ce ticket à la caisse.', 'nl-BE': 'Toon dit ticket aan de kassa.' },
+        terms: { 'fr-BE': 'Valable aujourd’hui dans le magasin participant.', 'nl-BE': 'Vandaag geldig in de deelnemende winkel.' },
+      },
+      {
+        outcome_id: 'consolation-qr',
+        outcome_type: 'consolation',
+        active: true,
+        localized_label: { 'fr-BE': 'Merci — scannez votre souvenir', 'nl-BE': 'Bedankt — scan uw aandenken' },
+        weight: 20,
+        print_ticket: true,
+        ticket_template_id: 'consolation-qr-ticket',
+        bitmap_asset_id: 'consolation-ticket-placeholder',
+        cashier_instruction: { 'fr-BE': 'Scannez le QR ou encodez le code lisible sur le ticket.', 'nl-BE': 'Scan de QR of voer de leesbare code op het ticket in.' },
+        terms: { 'fr-BE': 'Souvenir promotionnel sans valeur monétaire.', 'nl-BE': 'Promotioneel aandenken zonder geldwaarde.' },
+      },
+      {
+        outcome_id: 'soft-thanks-no-print',
+        outcome_type: 'loss',
+        active: true,
+        localized_label: { 'fr-BE': 'Merci de votre participation', 'nl-BE': 'Bedankt voor uw deelname' },
+        weight: 5,
+        print_ticket: false,
+        cashier_instruction: { 'fr-BE': 'Aucune action caisse.', 'nl-BE': 'Geen kassahandeling.' },
+        terms: { 'fr-BE': 'Aucun ticket imprimé pour ce résultat.', 'nl-BE': 'Geen ticket afgedrukt voor dit resultaat.' },
+      },
+    ] satisfies CampaignOutcome[],
+  },
+  visual_wheel: {
+    segments: [
+      { segment_id: 'slice-small-one', outcome_id: 'small-discount', localized_label: { 'fr-BE': 'Petite réduction', 'nl-BE': 'Kleine korting' } },
+      { segment_id: 'slice-standard-one', outcome_id: 'standard-discount', localized_label: { 'fr-BE': 'Réduction standard', 'nl-BE': 'Standaard korting' } },
+      { segment_id: 'slice-consolation-one', outcome_id: 'consolation-qr', localized_label: { 'fr-BE': 'Merci', 'nl-BE': 'Bedankt' } },
+      { segment_id: 'slice-small-two', outcome_id: 'small-discount', localized_label: { 'fr-BE': 'Petite réduction', 'nl-BE': 'Kleine korting' } },
+      { segment_id: 'slice-soft-thanks', outcome_id: 'soft-thanks-no-print', localized_label: { 'fr-BE': 'Merci', 'nl-BE': 'Bedankt' } },
+      { segment_id: 'slice-standard-two', outcome_id: 'standard-discount', localized_label: { 'fr-BE': 'Réduction standard', 'nl-BE': 'Standaard korting' } },
+    ] satisfies VisualWheelSegment[],
+  },
 } as const;
 
-export const demoPackageHtml = `<!doctype html>
-<html lang="en">
+export function localized(copy: LocalizedCopy | undefined, locale: CampaignLocale): string {
+  return copy?.[locale] ?? copy?.['fr-BE'] ?? copy?.['nl-BE'] ?? '';
+}
+
+export function segmentIndexForOutcome(outcomeId: string, spinCount = 0): number {
+  const matches = drOetkerManifest.visual_wheel.segments
+    .map((segment, index) => ({ segment, index }))
+    .filter(({ segment }) => segment.outcome_id === outcomeId);
+  const fallback = matches[0];
+  if (!fallback) return 0;
+  return matches[spinCount % matches.length]?.index ?? fallback.index;
+}
+
+export const drOetkerModuleHtml = `<!doctype html>
+<html lang="fr-BE">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Chocomel Prize Wheel Demo Package</title>
+<title>Dr. Oetker Pizza Wheel Presentation Module</title>
 <style>
-  :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background:#2b1404; color:#fff6df; }
+  :root { color-scheme: light; font-family: Inter, system-ui, sans-serif; background:#fff8ec; color:#3b1f12; }
   body { margin:0; min-height:100vh; display:grid; place-items:center; overflow:hidden; }
-  main { box-sizing:border-box; width:min(86vw, 900px); max-height:calc(100vh - 32px); display:grid; place-items:center; align-content:center; text-align:center; padding:clamp(16px, 3vh, 32px); border-radius:36px; background:radial-gradient(circle at 50% 10%, #ffdc65, #a95511 42%, #411901 100%); box-shadow:0 30px 90px #0008; }
-  h1 { font-size:clamp(36px, 7vw, 84px); margin:0 0 8px; letter-spacing:-0.07em; }
-  p { font-size:clamp(16px, 2.5vw, 28px); margin:8px auto; max-width:720px; }
-  button { margin-top:clamp(12px, 2vh, 20px); font-size:clamp(22px, 4vw, 32px); border:0; border-radius:999px; padding:clamp(16px, 2.5vh, 24px) clamp(28px, 5vw, 42px); color:#3c1600; background:#ffe784; font-weight:900; box-shadow:0 14px 0 #7b3407; cursor:pointer; }
-  button:active { transform:translateY(8px); box-shadow:0 6px 0 #7b3407; }
-  .wheel { width:clamp(120px, 28vh, 240px); height:clamp(120px, 28vh, 240px); margin:clamp(8px, 1.5vh, 16px) auto clamp(12px, 2vh, 22px); border-radius:50%; background:conic-gradient(#ffe784 0 60deg,#8b3b09 60deg 120deg,#fff 120deg 180deg,#d1620d 180deg 240deg,#ffe784 240deg 300deg,#8b3b09 300deg 360deg); border:14px solid #3c1600; animation:spin 5s cubic-bezier(.2,.8,.2,1) infinite; }
-  @keyframes spin { 0%{transform:rotate(0deg)} 70%,100%{transform:rotate(730deg)} }
+  main { width:min(94vw, 760px); display:grid; place-items:center; gap:18px; text-align:center; padding:32px; }
+  .pointer { width:0; height:0; border-left:22px solid transparent; border-right:22px solid transparent; border-top:44px solid #2f7d32; filter:drop-shadow(0 6px 0 #19481c); z-index:2; }
+  .wheel { --rotation: 0deg; width:clamp(250px, 52vmin, 520px); height:clamp(250px, 52vmin, 520px); border-radius:50%; border:18px solid #d84624; background:conic-gradient(#f7d37f 0 60deg,#fff1d5 60deg 120deg,#d84624 120deg 180deg,#f7d37f 180deg 240deg,#2f7d32 240deg 300deg,#fff1d5 300deg 360deg); box-shadow:inset 0 0 0 22px #fff8ec, inset 0 0 0 34px #f5ba62, 0 24px 54px #6b2a132b; transform:rotate(var(--rotation)); transition:transform 3.8s cubic-bezier(.12,.7,.14,1); position:relative; }
+  .wheel::before { content:''; position:absolute; inset:25%; border-radius:50%; background:radial-gradient(circle, #f7d37f 0 42%, #d84624 43% 48%, #fff8ec 49%); box-shadow:0 0 0 10px #3b1f1214; }
+  .wheel::after { content:''; position:absolute; inset:9%; border-radius:50%; background:radial-gradient(circle at 32% 28%, #9b2d18 0 3%, transparent 4%), radial-gradient(circle at 66% 35%, #2f7d32 0 3%, transparent 4%), radial-gradient(circle at 42% 70%, #9b2d18 0 3%, transparent 4%); opacity:.8; }
+  h1 { font-size:clamp(34px, 7vw, 78px); line-height:.92; letter-spacing:-.06em; margin:0; }
+  p { max-width:24ch; margin:0; font-size:clamp(18px, 3vw, 30px); }
+  .status { font-weight:900; color:#d84624; }
 </style>
 </head>
 <body>
 <main>
-  <div class="wheel" aria-hidden="true"></div>
-  <h1>Chocomel Spin</h1>
-  <p id="status">Tap the prize button. The package talks only to the player bridge.</p>
-  <button id="claim" type="button">Claim fake prize</button>
+  <div class="pointer" aria-hidden="true"></div>
+  <div id="wheel" class="wheel" aria-label="Pizza prize wheel"></div>
+  <h1>Pizza Wheel</h1>
+  <p id="status" class="status">Concours · Wedstrijd</p>
 </main>
 <script>
 (() => {
   const protocol = 'retail-kiosk-package-bridge/v1';
-  let sequence = 0;
-  const pending = new Map();
-  function bridge(method, payload) {
-    const id = 'demo-' + (++sequence);
-    parent.postMessage({ protocol, type: 'request', id, method, payload }, '*');
-    return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
-  }
+  const wheel = document.getElementById('wheel');
+  const status = document.getElementById('status');
+  const segments = 6;
+  let spins = 0;
+  parent.postMessage({ protocol, type: 'request', id: 'dr-oetker-loaded', method: 'recordTelemetry', payload: { event: 'package_loaded', package_id: 'dr-oetker-pizza-wheel' } }, '*');
   window.addEventListener('message', (event) => {
     const message = event.data || {};
-    if (message.protocol !== protocol || message.type !== 'response') return;
-    const callbacks = pending.get(message.id);
-    if (!callbacks) return;
-    pending.delete(message.id);
-    message.ok ? callbacks.resolve(message.result) : callbacks.reject(new Error(message.error || 'bridge_error'));
-  });
-  bridge('recordTelemetry', { event: 'package_loaded' }).catch(() => {});
-  document.getElementById('claim').addEventListener('click', async () => {
-    const status = document.getElementById('status');
-    status.textContent = 'Requesting ticket through parent bridge…';
-    try {
-      await bridge('requestPrint', { result: { prize: 'Free Chocomel', tier: 'demo' }, ticket: { prize: 'Free Chocomel', headline: 'Chocomel HQ Demo' } });
-      await bridge('complete', { result: 'printed_demo_ticket' });
-      status.textContent = 'Prize ticket accepted by runtime. Please collect your printed ticket.';
-    } catch (error) {
-      await bridge('fail', { message: String(error && error.message || error) }).catch(() => {});
-      status.textContent = 'Bridge rejected the request: ' + String(error && error.message || error);
+    if (message.protocol !== protocol || message.type !== 'presentation') return;
+    if (message.action === 'idle') {
+      status.textContent = message.label || 'Concours · Wedstrijd';
+      wheel.style.setProperty('--rotation', '0deg');
+      return;
+    }
+    if (message.action === 'spin') {
+      const index = Number.isInteger(message.segmentIndex) ? message.segmentIndex : 0;
+      const stop = 360 - ((index + 0.5) * (360 / segments));
+      spins += 1;
+      wheel.style.setProperty('--rotation', ((spins * 1440) + stop) + 'deg');
+      status.textContent = message.label || 'Résultat confirmé';
     }
   });
 })();
 </script>
 </body>
 </html>`;
+
+export const chocomelManifest = drOetkerManifest;
+export const demoPackageHtml = drOetkerModuleHtml;

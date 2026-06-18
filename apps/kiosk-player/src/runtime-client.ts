@@ -31,10 +31,28 @@ export interface RuntimeClientConfig {
 export interface RuntimeClient {
   getState(): Promise<RuntimeState>;
   injectDevToken(payload?: Record<string, unknown>): Promise<RuntimeState>;
+  submitQuizAnswer(payload: { language: 'fr-BE' | 'nl-BE'; choice_id: string }): Promise<{ quiz: QuizAnswerResponse; state: RuntimeState }>;
+  startSpin(): Promise<SpinStartResponse>;
   requestPrint(payload?: Record<string, unknown>): Promise<{ state: RuntimeState; ticket?: unknown; print?: unknown }>;
   enterMaintenance(): Promise<RuntimeState>;
   exitMaintenance(): Promise<RuntimeState>;
   subscribe(onState: (state: RuntimeState) => void, onError?: (error: Event) => void): () => void;
+}
+
+export interface QuizAnswerResponse {
+  correct: boolean;
+  retry: boolean;
+  attempts: number;
+  completed_no_reward: boolean;
+  session: unknown;
+}
+
+export interface SpinStartResponse {
+  outcome: unknown;
+  ticket?: unknown;
+  print?: unknown;
+  session: unknown;
+  state: RuntimeState;
 }
 
 function defaultRuntimeBaseUrl(): string {
@@ -83,6 +101,12 @@ export function createRuntimeClient(config: RuntimeClientConfig = runtimeConfigF
     async injectDevToken(payload = { source: 'kiosk-player', fake: true }) {
       const response = await request<{ state: RuntimeState }>('/dev/token', { method: 'POST', body: JSON.stringify(payload) });
       return response.state;
+    },
+    async submitQuizAnswer(payload) {
+      return request<{ quiz: QuizAnswerResponse; state: RuntimeState }>('/quiz/answer', { method: 'POST', body: JSON.stringify(payload) });
+    },
+    async startSpin() {
+      return request<SpinStartResponse>('/spin/start', { method: 'POST', body: JSON.stringify({}) });
     },
     async requestPrint(payload = {}) {
       return request<{ state: RuntimeState; ticket?: unknown; print?: unknown }>('/print/test', { method: 'POST', body: JSON.stringify(payload) });

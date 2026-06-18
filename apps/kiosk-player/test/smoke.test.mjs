@@ -47,9 +47,30 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.doesNotMatch(appSource, /ticket_id|key_version|hmac_algorithm|secret_hmac/);
   });
 
+  it('implements the Dr. Oetker quiz-to-spin flow through backend runtime endpoints', () => {
+    assert.match(appSource, /drOetkerManifest/);
+    assert.match(appSource, /language-switch/);
+    assert.match(appSource, /selectLanguage\('fr-BE'\)/);
+    assert.match(appSource, /selectLanguage\('nl-BE'\)/);
+    assert.match(appSource, /submitQuizAnswer\(\{ language, choice_id: choiceId \}\)/);
+    assert.match(appSource, /startSpin\(\)/);
+    assert.match(appSource, /quiz_passed === true/);
+    assert.match(clientSource, /'\/quiz\/answer'/);
+    assert.match(clientSource, /'\/spin\/start'/);
+  });
+
+  it('maps backend-selected outcomes to presentation wheel segments without frontend prize authority', () => {
+    assert.match(fixtureSource, /visual_wheel/);
+    assert.match(fixtureSource, /segmentIndexForOutcome/);
+    assert.match(appSource, /segmentIndexForOutcome\(outcomeId/);
+    assert.match(appSource, /type: 'presentation'/);
+    assert.doesNotMatch(fixtureSource, /createTicket|Math\.random\(\) \*/);
+    assert.doesNotMatch(appSource, /ticket_code|createTicket|qr_payload_template\.replaceAll|Math\.random\(\) \*/);
+  });
+
   it('mounts the package bridge only as an iframe action and destroys it on iframe removal', () => {
     assert.match(appSource, /function packageBridge\(node: HTMLIFrameElement\)/);
-    assert.match(appSource, /destroy: mountPackageBridge/);
+    assert.match(appSource, /destroyBridge\(\)/);
     assert.match(appSource, /use:packageBridge/);
     assert.match(appSource, /getRuntimeState: \(\) => runtimeState/);
   });
