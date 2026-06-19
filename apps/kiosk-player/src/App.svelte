@@ -48,6 +48,7 @@
     const renderPayload = recordValue(latestTicket, 'render_payload');
     return {
       title: textValue(recordValue(latestTicket, 'title'))
+        ?? textValue(recordValue(renderPayload, 'reward_label'))
         ?? textValue(recordValue(renderPayload, 'localized_label'))
         ?? fallback?.title
         ?? 'Résultat confirmé',

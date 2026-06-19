@@ -40,6 +40,7 @@ describe('@retail-kiosk/kiosk-player package', () => {
   it('keeps normal player mode customer-safe with no raw tickets or debug controls unless explicitly enabled', () => {
     assert.match(appSource, /hqDebugControlsEnabled/);
     assert.match(appSource, /render_payload/);
+    assert.match(appSource, /reward_label/);
     assert.match(appSource, /ticketSummary\.title/);
     assert.match(appSource, /ticketSummary\.body/);
     assert.match(appSource, /ticketSummary\.status/);
