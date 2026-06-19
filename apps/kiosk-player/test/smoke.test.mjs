@@ -83,6 +83,14 @@ describe('@retail-kiosk/kiosk-player package', () => {
     }
   });
 
+  it('renders a complete labelled Dr. Oetker demo wheel', () => {
+    assert.match(fixtureSource, /segment-label/);
+    assert.match(fixtureSource, /-0,50 € Ristorante/);
+    assert.match(fixtureSource, /-1 € Casa di Mama/);
+    assert.match(fixtureSource, /QR recette pizza/);
+    assert.match(fixtureSource, /wheel\.animate/);
+  });
+
   it('maps backend-selected outcomes to presentation wheel segments without frontend prize authority', () => {
     assert.match(fixtureSource, /visual_wheel/);
     assert.match(fixtureSource, /segmentIndexForOutcome/);
