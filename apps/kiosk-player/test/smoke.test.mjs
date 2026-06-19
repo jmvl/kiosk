@@ -59,6 +59,13 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.match(clientSource, /'\/spin\/start'/);
   });
 
+  it('exposes a temporary no-token start button while coin hardware is being calibrated', () => {
+    assert.match(appSource, /startTempGameSession/);
+    assert.match(appSource, /TEMP: start game/);
+    assert.match(clientSource, /startDevSession/);
+    assert.match(clientSource, /'\/dev\/session\/start'/);
+  });
+
   it('keeps the Dr. Oetker quiz copy reactive to pre-answer language switches', () => {
     assert.match(appSource, /\$: language = activeLanguage\(runtimeState, selectedLanguage\);/);
     assert.match(appSource, /function activeLanguage\(state: RuntimeState \| null = runtimeState, fallbackLanguage: CampaignLocale = selectedLanguage\)/);

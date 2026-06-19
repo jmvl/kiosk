@@ -376,6 +376,13 @@ export async function createLocalBackendServer(runtime = createLocalBackendRunti
 
   runtime.tokenAdapter.onToken?.((token) => {
     try {
+      if ((token as { source?: unknown }).source === 'serial') {
+        appendEvent(runtime.db, {
+          kioskId: runtime.config.kioskId,
+          eventType: 'serial_token_detected',
+          payload: { token },
+        });
+      }
       startSession(runtime, token as unknown as Record<string, unknown>);
       broadcastState();
     } catch (error) {

@@ -363,6 +363,28 @@ describe('local backend fake hardware API', () => {
     assert.ok(adapter.ingestForTest(Buffer.from([0x01, 0x02]), 1_600));
   });
 
+  it('records serial token detections before starting the session', async () => {
+    let tokenCallback;
+    const tokenAdapter = {
+      adapter: 'TestSerialTokenAdapter',
+      fake: false,
+      health: () => ({ adapter: 'TestSerialTokenAdapter', status: 'online', fake: false }),
+      onToken: (callback) => { tokenCallback = callback; },
+    };
+    const { app, runtime } = await testServer({ packageId: 'dr-oetker-pizza-wheel', packageVersion: '1.0.0' }, { tokenAdapter, printerAdapter: new FakePrinterAdapter() });
+    seedActiveCampaign(runtime);
+    try {
+      tokenCallback({ token_id: 'serial-token-1', source: 'serial', denomination_cents: 0, occurred_at: new Date().toISOString(), payload: { raw_hex: '01' } });
+      const serialEvent = runtime.db.prepare("select payload from events where event_type = 'serial_token_detected'").get();
+      const receivedEvent = runtime.db.prepare("select payload from events where event_type = 'token_received'").get();
+      assert.ok(serialEvent);
+      assert.match(serialEvent.payload, /serial-token-1/);
+      assert.ok(receivedEvent);
+    } finally {
+      await app.close();
+    }
+  });
+
   it('submits CUPS print jobs through lp with injected command runner', async () => {
     const { db } = testServerDb();
     const ticket = seedTicket(db);

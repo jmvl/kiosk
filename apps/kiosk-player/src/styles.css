@@ -75,6 +75,8 @@ pre { max-height: 320px; overflow: auto; text-align: left; background: #0008; pa
   overflow: hidden;
 }
 .primary { font-size: clamp(20px, 2.4vmin, 38px); padding: 24px 40px; box-shadow: 0 16px 0 #8b3b09; }
+.temp-start-button { margin-top: 24px; background:#2f7d32; color:#fff8e7; box-shadow:0 14px 0 #19481c; }
+.temp-start-button:disabled { opacity:.55; cursor:not-allowed; transform:none; }
 
 .attract {
   display: grid;

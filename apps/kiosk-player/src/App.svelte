@@ -220,6 +220,21 @@
     }
   }
 
+  async function startTempGameSession() {
+    if (busy) return;
+    busy = true;
+    error = null;
+    setReveal(null);
+    quizMessage = null;
+    try {
+      applyRuntimeState(await runtimeClient.startDevSession({ source: 'kiosk-player-temp-button', trigger: 'temp_start_button' }));
+    } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
+    } finally {
+      busy = false;
+    }
+  }
+
   async function enterMaintenance() {
     error = null;
     try {
@@ -254,6 +269,7 @@
       <p class="eyebrow">Token start</p>
       <h2>Pizza Wheel</h2>
       <p>{selectedLanguage === 'fr-BE' ? 'Insérez le jeton reçu en caisse pour participer.' : 'Steek de jeton van de kassa in om deel te nemen.'}</p>
+      <button class="primary temp-start-button" type="button" disabled={busy} on:click={startTempGameSession}>TEMP: start game</button>
       {#if hqDebugControlsEnabled}<button class="primary" type="button" on:click={startFakeSession}>HQ debug: inject fake token</button>{/if}
     </section>
   {/if}
