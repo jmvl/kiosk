@@ -303,14 +303,25 @@ export interface CupsCommandRunnerResult {
 export type CupsCommandRunner = (command: string, args: readonly string[]) => Promise<CupsCommandRunnerResult>;
 
 function ticketText(ticket: Ticket, requestPayload: Record<string, unknown>): string {
+  const renderPayload = requestPayload.render_payload && typeof requestPayload.render_payload === 'object'
+    ? requestPayload.render_payload as Record<string, unknown>
+    : {};
+  const line = (label: string, value: unknown) => value === undefined || value === null || value === '' ? [] : [`${label}: ${String(value)}`];
   return [
-    'Retail Kiosk Ticket',
-    `Ticket: ${ticket.ticket_code}`,
-    `Campaign: ${ticket.campaign_short_code}`,
+    'DR. OETKER PIZZA WHEEL',
+    'Concours / Wedstrijd',
+    '',
+    ...line('Ticket', ticket.ticket_code),
+    ...line('Reward', renderPayload.reward_label ?? renderPayload.localized_label),
+    ...line('Value', renderPayload.reward_value),
+    ...line('Product', renderPayload.product_name),
+    ...line('QR', renderPayload.qr_payload),
+    '',
+    ...line('Cashier', renderPayload.cashier_instruction),
+    ...line('Terms', renderPayload.terms),
+    '',
     `Kiosk: ${ticket.kiosk_id}`,
-    `Package: ${ticket.package_id}@${ticket.package_version}`,
     `Issued: ${ticket.created_at}`,
-    `Payload: ${JSON.stringify(requestPayload)}`,
     '',
   ].join('\n');
 }

@@ -13,6 +13,7 @@
   const runtimeClient = createRuntimeClient();
   const defaultLanguage: CampaignLocale = 'fr-BE';
   const resultRevealResetMs = 12_000;
+  const wheelSpinRevealMs = 4_200;
 
   let runtimeState: RuntimeState | null = null;
   let selectedLanguage: CampaignLocale = defaultLanguage;
@@ -24,6 +25,8 @@
   let spinCount = 0;
   let packageFrame: HTMLIFrameElement | null = null;
   let resultResetTimer: ReturnType<typeof setTimeout> | null = null;
+  let wheelSpinTimer: ReturnType<typeof setTimeout> | null = null;
+  let wheelSpinning = false;
 
   function recordValue(value: unknown, key: string): unknown {
     return value && typeof value === 'object' && key in value ? (value as Record<string, unknown>)[key] : undefined;
@@ -64,7 +67,7 @@
     const mode = state?.runtime.mode ?? 'idle';
     if (mode === 'maintenance' || mode === 'degraded_printer' || mode === 'degraded_token_input') return 'maintenance';
     const sessionState = state?.current_session?.state;
-    if (sessionState === 'playing' || sessionState === 'result_pending' || sessionState === 'print_requested' || sessionState === 'printing') return 'game';
+    if (wheelSpinning || sessionState === 'playing' || sessionState === 'result_pending' || sessionState === 'print_requested' || sessionState === 'printing') return 'game';
     if (revealValue || sessionState === 'completed' || sessionState === 'resetting') return 'result';
     return 'idle';
   }
@@ -88,6 +91,7 @@
     return () => {
       cancelled = true;
       clearResultResetTimer();
+      clearWheelSpinTimer();
       unsubscribe();
     };
   });
@@ -95,6 +99,12 @@
   function clearResultResetTimer() {
     if (resultResetTimer) clearTimeout(resultResetTimer);
     resultResetTimer = null;
+  }
+
+  function clearWheelSpinTimer() {
+    if (wheelSpinTimer) clearTimeout(wheelSpinTimer);
+    wheelSpinTimer = null;
+    wheelSpinning = false;
   }
 
   function resetToIdlePresentation() {
@@ -185,6 +195,7 @@
     busy = true;
     error = null;
     quizMessage = null;
+    clearWheelSpinTimer();
     try {
       const response = await runtimeClient.startSpin();
       const outcome = isCampaignOutcome(response.outcome) ? response.outcome : null;
@@ -192,17 +203,24 @@
       spinCount += 1;
       const segmentIndex = outcomeId ? segmentIndexForOutcome(outcomeId, spinCount - 1) : 0;
       const title = outcome ? localized(outcome.localized_label, language) : 'Résultat confirmé';
-      setReveal({
+      const nextReveal = {
         title,
         body: outcome ? localized(outcome.cashier_instruction, language) : (language === 'fr-BE' ? 'Résultat confirmé par le kiosque.' : 'Resultaat bevestigd door de kiosk.'),
         status: outcome?.print_ticket === false ? (language === 'fr-BE' ? 'Aucun ticket imprimé' : 'Geen ticket afgedrukt') : (language === 'fr-BE' ? 'Ticket en cours' : 'Ticket wordt afgedrukt'),
         ticket: response.ticket ?? null,
         ...(outcomeId ? { outcomeId } : {}),
-      });
+      } satisfies Reveal;
+      wheelSpinning = true;
       postPresentation({ action: 'spin', segmentIndex, label: title });
       await tick();
       applyRuntimeState(response.state);
+      wheelSpinTimer = setTimeout(() => {
+        wheelSpinning = false;
+        setReveal(nextReveal);
+        applyRuntimeState(response.state);
+      }, wheelSpinRevealMs);
     } catch (err) {
+      clearWheelSpinTimer();
       error = err instanceof Error ? err.message : String(err);
     } finally {
       busy = false;

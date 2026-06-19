@@ -195,11 +195,11 @@ describe('local backend admin telemetry', () => {
       assert.match(body.access.boundary_note, /Production auth/);
       assert.equal(body.quiz.attempt_limit, 2);
       assert.equal(body.outcome_strategy.authority, 'local_backend');
-      assert.equal(body.outcome_strategy.outcomes[0].outcome_id, 'free-pizza');
+      assert.equal(body.outcome_strategy.outcomes[0].outcome_id, 'standard-discount');
       assert.equal(body.ticket_templates[0].template_id, 'voucher-v1');
       assert.equal(body.bitmap_assets[0].asset_id, 'ticket-bitmap');
       assert.equal(body.qr_payload_patterns[0].qr_payload_template, 'https://promo.example.test/r/{{ticket_code}}');
-      assert.equal(body.visual_wheel.segments[0].outcome_id, 'free-pizza');
+      assert.equal(body.visual_wheel.segments[0].outcome_id, 'standard-discount');
     } finally {
       await app.close();
     }
@@ -261,10 +261,10 @@ function campaignRuntimePayload() {
       offline_required: true,
       selection: 'weighted_random',
       outcomes: [{
-        outcome_id: 'free-pizza',
+        outcome_id: 'standard-discount',
         outcome_type: 'win',
         active: true,
-        localized_label: { 'fr-BE': 'Pizza gratuite', 'nl-BE': 'Gratis pizza' },
+        localized_label: { 'fr-BE': 'Réduction pizza standard', 'nl-BE': 'Standaard pizzakorting' },
         weight: 1,
         print_ticket: true,
         ticket_template_id: 'voucher-v1',
@@ -275,7 +275,7 @@ function campaignRuntimePayload() {
       }],
     },
     visual_wheel: {
-      segments: [{ segment_id: 'slice-free-pizza', outcome_id: 'free-pizza', bitmap_asset_id: 'ticket-bitmap', localized_label: { 'fr-BE': 'Pizza gratuite', 'nl-BE': 'Gratis pizza' } }],
+      segments: [{ segment_id: 'slice-standard-discount', outcome_id: 'standard-discount', bitmap_asset_id: 'ticket-bitmap', localized_label: { 'fr-BE': 'Réduction standard', 'nl-BE': 'Standaard korting' } }],
     },
   };
 }
@@ -627,6 +627,10 @@ describe('local backend fake hardware API', () => {
         assert.equal(body.ticket.render_payload.bitmap_asset_id, 'ticket-bitmap');
         assert.equal(body.ticket.render_payload.qr_payload, `https://promo.example.test/r/${body.ticket.ticket_code}`);
         assert.equal(body.ticket.render_payload.cashier_instruction, language === 'fr-BE' ? 'Scannez ce ticket FR' : 'Scan dit ticket NL');
+        assert.equal(body.ticket.render_payload.campaign_name, 'Dr. Oetker Pizza Wheel');
+        assert.equal(body.ticket.render_payload.product_name, 'Dr. Oetker Ristorante pizza');
+        assert.equal(body.ticket.render_payload.reward_value, '€1.00');
+        assert.equal(body.ticket.render_payload.reward_label, language === 'fr-BE' ? '1 € de réduction sur une pizza Dr. Oetker Ristorante' : '€1 korting op een Dr. Oetker Ristorante pizza');
       }
       assert.equal(runtime.db.prepare('select count(*) as count from tickets').get().count, 2);
       assert.equal(runtime.db.prepare("select count(*) as count from events where event_type = 'outcome_selected'").get().count, 2);

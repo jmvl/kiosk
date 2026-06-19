@@ -91,12 +91,20 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.doesNotMatch(appSource, /ticket_code|createTicket|qr_payload_template\.replaceAll|Math\.random\(\) \*/);
   });
 
+  it('keeps the presentation wheel mounted long enough to visibly spin before result reveal', () => {
+    assert.match(appSource, /const wheelSpinRevealMs = 4_200/);
+    assert.match(appSource, /let wheelSpinning = false/);
+    assert.match(appSource, /if \(wheelSpinning \|\| sessionState === 'playing'/);
+    assert.match(appSource, /postPresentation\(\{ action: 'spin', segmentIndex, label: title \}\)/);
+    assert.match(appSource, /setTimeout\(\(\) => \{\n\s+wheelSpinning = false;\n\s+setReveal\(nextReveal\);/);
+  });
+
   it('keeps Dr. Oetker result reveal scoped to the current run and auto-resets to idle', () => {
     assert.match(appSource, /const resultRevealResetMs = 12_000/);
     assert.match(appSource, /let resultResetTimer: ReturnType<typeof setTimeout> \| null = null/);
     assert.match(appSource, /function setReveal\(nextReveal: Reveal \| null\)/);
     assert.match(appSource, /setTimeout\(resetToIdlePresentation, resultRevealResetMs\)/);
-    assert.match(appSource, /clearResultResetTimer\(\);\n\s+unsubscribe\(\);/);
+    assert.match(appSource, /clearResultResetTimer\(\);\n\s+clearWheelSpinTimer\(\);\n\s+unsubscribe\(\);/);
     assert.match(appSource, /ticketSummary = customerTicketSummary\(reveal\?\.ticket \?\? null, reveal\)/);
     assert.doesNotMatch(appSource, /ticketSummary = customerTicketSummary\(runtimeState\?\.latest_ticket/);
     assert.match(appSource, /ticket: null,\n\s+\}\);/);

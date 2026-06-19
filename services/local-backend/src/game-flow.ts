@@ -90,8 +90,27 @@ export function selectWeightedOutcome(db: LocalDatabase, outcomes: CampaignOutco
   for (const outcome of eligible) { pick -= outcome.weight; if (pick < 0) return outcome; }
   return eligible[eligible.length - 1] as CampaignOutcome;
 }
+function rewardDetails(outcome: CampaignOutcome, language: SessionLanguage): Record<string, unknown> {
+  if (outcome.outcome_id === 'small-discount') return { product_name: 'Dr. Oetker Ristorante pizza', reward_value: '€0.50', reward_label: language === 'fr-BE' ? '0,50 € de réduction sur une pizza Dr. Oetker Ristorante' : '€0,50 korting op een Dr. Oetker Ristorante pizza' };
+  if (outcome.outcome_id === 'standard-discount') return { product_name: 'Dr. Oetker Ristorante pizza', reward_value: '€1.00', reward_label: language === 'fr-BE' ? '1 € de réduction sur une pizza Dr. Oetker Ristorante' : '€1 korting op een Dr. Oetker Ristorante pizza' };
+  if (outcome.outcome_id === 'consolation-qr') return { product_name: 'Dr. Oetker Pizza', reward_value: 'QR', reward_label: language === 'fr-BE' ? 'Carte recette pizza à scanner' : 'Scanbare pizzareceptkaart' };
+  return { product_name: 'Dr. Oetker Pizza', reward_value: null, reward_label: outcome.localized_label[language] };
+}
+
 export function buildTicketRenderPayload(input: { sessionId: string; language: SessionLanguage; outcome: CampaignOutcome; ticketCode?: string }): Record<string, unknown> {
-  const payload: Record<string, unknown> = { session_id: input.sessionId, language: input.language, outcome_id: input.outcome.outcome_id, outcome_type: input.outcome.outcome_type, localized_label: input.outcome.localized_label[input.language], ticket_template_id: input.outcome.ticket_template_id ?? null, bitmap_asset_id: input.outcome.bitmap_asset_id ?? null, cashier_instruction: input.outcome.cashier_instruction[input.language], terms: input.outcome.terms[input.language] };
+  const payload: Record<string, unknown> = {
+    campaign_name: 'Dr. Oetker Pizza Wheel',
+    session_id: input.sessionId,
+    language: input.language,
+    outcome_id: input.outcome.outcome_id,
+    outcome_type: input.outcome.outcome_type,
+    localized_label: input.outcome.localized_label[input.language],
+    ...rewardDetails(input.outcome, input.language),
+    ticket_template_id: input.outcome.ticket_template_id ?? null,
+    bitmap_asset_id: input.outcome.bitmap_asset_id ?? null,
+    cashier_instruction: input.outcome.cashier_instruction[input.language],
+    terms: input.outcome.terms[input.language],
+  };
   if (input.ticketCode && input.outcome.qr_payload_template) payload.qr_payload = input.outcome.qr_payload_template.replaceAll('{{ticket_code}}', input.ticketCode);
   return payload;
 }
