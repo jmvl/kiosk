@@ -16,7 +16,7 @@
   const center = wheelSize / 2;
   const radius = 300;
   const labelRadius = 218;
-  const sectorCount = 20;
+  const sectorCount = 12;
   const colors = [0xf7d37f, 0xfff1d5, 0xd84624, 0xf5ba62, 0x2f7d32, 0xfffaf0, 0xa8321d, 0xffdf8a, 0xffffff, 0x3e8c43];
 
   let host: HTMLDivElement;
@@ -82,6 +82,14 @@
     loopTween?.kill();
   });
 
+  function wheelLabel(segment: VisualWheelSegment | undefined): string {
+    const label = localized(segment?.localized_label, locale);
+    if (label.includes('0,50')) return '0,50€';
+    if (label.includes('-1')) return '1€';
+    if (/QR/i.test(label)) return 'QR';
+    return locale === 'fr-BE' ? 'Merci' : 'Bedankt';
+  }
+
   function drawWheel() {
     if (!app) return;
     app.stage.removeChildren();
@@ -125,18 +133,18 @@
     for (let index = 0; index < sectorCount; index += 1) {
       const segment = segments[index % sourceCount];
       const angle = index * radiansPerSector - Math.PI / 2;
-      const label = localized(segment?.localized_label, locale).replace('€ ', '€\n');
+      const label = wheelLabel(segment);
       const text = new Text({
         text: label,
         style: {
           fill: '#321407',
           fontFamily: 'Inter, system-ui, sans-serif',
-          fontSize: 24,
+          fontSize: 34,
           fontWeight: '900',
           align: 'center',
           wordWrap: true,
-          wordWrapWidth: 128,
-          lineHeight: 25,
+          wordWrapWidth: 92,
+          lineHeight: 36,
           dropShadow: { color: '#fff8ec', blur: 4, angle: 0, distance: 1, alpha: 0.9 },
         },
       });
