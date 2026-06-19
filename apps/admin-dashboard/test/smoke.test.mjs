@@ -121,7 +121,12 @@ describe('@retail-kiosk/admin-dashboard v1', () => {
     const bundleName = readdirSync(assetsDir).find((name) => name.endsWith('.js'));
     assert.ok(bundleName);
     const bundle = readFileSync(join(assetsDir, bundleName), 'utf8');
+    const source = readFileSync(join(import.meta.dirname, '..', 'src', 'main.tsx'), 'utf8');
 
+    assert.match(source, /<SchedulerPanel schedules=\{schedules\} runtime=\{runtime\} scheduler=\{scheduler\} onRefresh=\{refresh\} \/>/);
+    assert.match(source, /<GameRunLogPanel runs=\{gameRuns\} \/>/);
+    assert.match(source, /<section className="panel scheduler-panel" aria-label="Scheduler">/);
+    assert.match(source, /<section className="panel game-runs-panel" aria-label="Recent game run log">/);
     assert.match(bundle, /Day timeline and module assignment/);
     assert.match(bundle, /\/schedules/);
     assert.match(bundle, /Publish local only marks the local draft valid\/cached/);
@@ -133,8 +138,10 @@ describe('@retail-kiosk/admin-dashboard v1', () => {
     assert.match(bundle, /IP address/);
     assert.match(bundle, /Printer \/ CUPS/);
     assert.match(bundle, /Serial adapter/);
+    assert.match(bundle, /Scheduler/);
     assert.match(bundle, /Game run log/);
     assert.match(bundle, /\/admin\/api\/game-runs/);
+    assert.match(bundle, /Recent game run log/);
     assert.match(bundle, /Recent sessions, events, and tickets/);
     assert.match(bundle, /Ticket \/ print/);
     assert.match(bundle, /\/admin\/api\/campaign-preview/);

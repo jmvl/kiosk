@@ -315,9 +315,12 @@ Can view:
 - active campaign;
 - current package;
 - local hardware status;
+- scheduler/day timeline and active module assignment;
 - last session/ticket;
-- game run log;
+- recent game run log/history;
 - printer/token status.
+
+Live A8/A9 admin QA must verify visible `Scheduler` and `Recent game run log` panels on `/admin`; absence of either panel is a QA failure unless a later product decision explicitly records a scope exception.
 
 Can operate:
 
