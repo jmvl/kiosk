@@ -220,6 +220,25 @@ Evidence:
 
 ---
 
+## Post-gate decisions captured for `MVP-Fake`
+
+These decisions close Gate 3 for player/package QA and clarify two non-blocking governance items.
+
+| Decision area | Captured decision | Blocks I5/Q2 player/package QA? | Blocks local/backend fake-flow? |
+|---|---|---:|---:|
+| First fake-flow campaign fixture | Use `Dr. Oetker Pizza Wheel` as the first `MVP-Fake` fixture because `docs/prd-dr-oetker-pizza-wheel-v1.md` and `campaigns/dr-oetker-pizza-wheel/` are the current active package target. Keep older Chocomel docs/packages as historical/reference material; do not remove them. | Yes, now resolved. | No. |
+| Launch trigger | Use a campaign-specific token-triggered flow for Dr. Oetker. In `MVP-Fake`, this means a fake/test token event starts the session; operator/test controls may inject that event for QA, but schedule/autoplay is not the first QA trigger. | Yes, now resolved. | No. |
+| Player stack | Accept the existing `apps/kiosk-player` Svelte + Vite baseline for `MVP-Fake`. Do not require React migration before player work. `docs/decision-kiosk-player-svelte-and-game-runtime.md` is the accepted stack decision and supersedes older React wording in the orchestrator plan. | Yes, now resolved. | No. |
+| Root lint script | Missing root `lint` is acceptable for `MVP-Fake` implementation and QA. Do not call CI/readiness complete on lint coverage until a dedicated root lint script is added and wired into the relevant quality gate. | No. | No. |
+
+### Follow-on interpretation
+
+- `I5`/`Q2` player/package QA may proceed against the Dr. Oetker fixture, token-triggered fake flow, and Svelte/Vite player baseline.
+- `I1`-`I4` local/backend fake-flow work remains unblocked by campaign branding, launch-trigger polish, React migration, or lint coverage.
+- Later production/HQ-readiness claims still require explicit evidence for physical token hardware, printer behavior, QR readability, and the broader O0/Q4 gates.
+
+---
+
 ## Suggested next board actions
 
 1. Create/confirm one approval gate card: `Approve MVP fake-flow implementation boundary` assigned to `analyst` or `orchestrator`, blocked for JM approval.
@@ -227,10 +246,10 @@ Evidence:
    - runtime baseline / kiosk host facts;
    - token serial mapping;
    - printer paper/queue/QR evidence;
-   - campaign identity and launch trigger;
    - redemption value/fraud policy.
-3. Do not recreate D1-D3 as open decisions; they are resolved and should remain implementation constraints.
-4. Keep fake-flow cards unblocked after JM approval, but keep I10/Q4 and HQ-pilot-ready status blocked until O0 evidence or explicit JM waiver.
+3. Treat campaign identity, launch trigger, player stack, and root lint policy as resolved for `MVP-Fake` unless JM explicitly changes them.
+4. Do not recreate D1-D3 as open decisions; they are resolved and should remain implementation constraints.
+5. Keep fake-flow cards unblocked after JM approval, but keep I10/Q4 and HQ-pilot-ready status blocked until O0 evidence or explicit JM waiver.
 
 ---
 
