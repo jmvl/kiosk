@@ -147,7 +147,7 @@ export const drOetkerModuleHtml = `<!doctype html>
   main { width:min(94vw, 760px); display:grid; place-items:center; gap:18px; text-align:center; padding:32px; }
   .pointer { width:0; height:0; border-left:22px solid transparent; border-right:22px solid transparent; border-top:44px solid #2f7d32; filter:drop-shadow(0 6px 0 #19481c); z-index:2; }
   .wheel { --rotation: 0deg; width:clamp(250px, 52vmin, 520px); height:clamp(250px, 52vmin, 520px); border-radius:50%; border:18px solid #d84624; background:conic-gradient(#f7d37f 0 60deg,#fff1d5 60deg 120deg,#d84624 120deg 180deg,#f7d37f 180deg 240deg,#2f7d32 240deg 300deg,#fff1d5 300deg 360deg); box-shadow:inset 0 0 0 22px #fff8ec, inset 0 0 0 34px #f5ba62, 0 24px 54px #6b2a132b; transform:rotate(var(--rotation)); transition:transform 3.8s cubic-bezier(.12,.7,.14,1); position:relative; }
-  .segment-label { position:absolute; left:50%; top:50%; width:34%; transform:rotate(var(--angle)) translate(54%, -50%) rotate(90deg); transform-origin:0 50%; z-index:3; color:#3b1f12; font-weight:900; font-size:clamp(10px, 1.8vmin, 18px); line-height:1; text-align:center; text-transform:uppercase; text-wrap:balance; text-shadow:0 1px 0 #fff8ec, 0 0 8px #fff8ec; pointer-events:none; }
+  .segment-label { position:absolute; width:30%; padding:4px 6px; border-radius:999px; background:#fff8ece6; transform:translate(-50%, -50%); z-index:3; color:#3b1f12; font-weight:900; font-size:clamp(9px, 1.45vmin, 14px); line-height:1; text-align:center; text-transform:uppercase; text-wrap:balance; box-shadow:0 2px 10px #3b1f1228; pointer-events:none; }
   .wheel::before { content:''; position:absolute; inset:25%; border-radius:50%; background:radial-gradient(circle, #f7d37f 0 42%, #d84624 43% 48%, #fff8ec 49%); box-shadow:0 0 0 10px #3b1f1214; }
   .wheel::after { content:''; position:absolute; inset:9%; border-radius:50%; background:radial-gradient(circle at 32% 28%, #9b2d18 0 3%, transparent 4%), radial-gradient(circle at 66% 35%, #2f7d32 0 3%, transparent 4%), radial-gradient(circle at 42% 70%, #9b2d18 0 3%, transparent 4%); opacity:.8; }
   h1 { font-size:clamp(34px, 7vw, 78px); line-height:.92; letter-spacing:-.06em; margin:0; }
@@ -159,7 +159,12 @@ export const drOetkerModuleHtml = `<!doctype html>
 <main>
   <div class="pointer" aria-hidden="true"></div>
   <div id="wheel" class="wheel" aria-label="Pizza prize wheel">
-    ${drOetkerManifest.visual_wheel.segments.map((segment, index) => `<span class="segment-label" style="--angle:${(index * 60) + 30}deg">${localized(segment.localized_label, 'fr-BE')}</span>`).join('')}
+    ${drOetkerManifest.visual_wheel.segments.map((segment, index) => {
+      const radians = (((index * 60) + 30) - 90) * Math.PI / 180;
+      const left = 50 + (34 * Math.cos(radians));
+      const top = 50 + (34 * Math.sin(radians));
+      return `<span class="segment-label" style="left:${left.toFixed(1)}%;top:${top.toFixed(1)}%">${localized(segment.localized_label, 'fr-BE')}</span>`;
+    }).join('')}
   </div>
   <h1>Pizza Wheel</h1>
   <p id="status" class="status">Concours · Wedstrijd</p>
