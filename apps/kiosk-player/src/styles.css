@@ -100,6 +100,8 @@ pre { max-height: 320px; overflow: auto; text-align: left; background: #0008; pa
 @keyframes pulse { 50% { transform: translateY(-50%) scale(1.05) rotate(18deg); } }
 
 .game-grid { display:grid; grid-template-columns: minmax(300px, .78fr) minmax(420px, 1.22fr); gap: 28px; align-items: stretch; }
+.wheel-stack { position: relative; min-height: 58vh; }
+.bridge-frame { position:absolute; width:1px; height:1px; opacity:0; pointer-events:none; border:0; }
 .package-frame { width:100%; min-height: 58vh; border:0; border-radius:34px; background:#fff8ec; box-shadow:0 30px 90px #0008; }
 .session-list { display:grid; grid-template-columns:max-content 1fr; gap:10px 20px; font-size:18px; }
 .session-list dt { color:#ffe27a; font-weight:900; }

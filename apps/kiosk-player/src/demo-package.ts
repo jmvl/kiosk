@@ -114,7 +114,7 @@ export const drOetkerManifest = {
     segments: [
       { segment_id: 'slice-small-one', outcome_id: 'small-discount', localized_label: { 'fr-BE': '-0,50 € Ristorante', 'nl-BE': '-0,50 € Ristorante' } },
       { segment_id: 'slice-standard-one', outcome_id: 'standard-discount', localized_label: { 'fr-BE': '-1 € Casa di Mama', 'nl-BE': '-1 € Casa di Mama' } },
-      { segment_id: 'slice-consolation-one', outcome_id: 'consolation-qr', localized_label: { 'fr-BE': 'QR recette pizza', 'nl-BE': 'QR pizzarecept' } },
+      { segment_id: 'slice-consolation-one', outcome_id: 'consolation-qr', localized_label: { 'fr-BE': 'QR Pizza', 'nl-BE': 'QR Pizza' } },
       { segment_id: 'slice-small-two', outcome_id: 'small-discount', localized_label: { 'fr-BE': '-0,50 € Tradizionale', 'nl-BE': '-0,50 € Tradizionale' } },
       { segment_id: 'slice-soft-thanks', outcome_id: 'soft-thanks-no-print', localized_label: { 'fr-BE': 'Merci', 'nl-BE': 'Bedankt' } },
       { segment_id: 'slice-standard-two', outcome_id: 'standard-discount', localized_label: { 'fr-BE': '-1 € Dr. Oetker', 'nl-BE': '-1 € Dr. Oetker' } },

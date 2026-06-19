@@ -18,6 +18,8 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.equal(packageJson.scripts.test, 'NODE_OPTIONS=--conditions=browser node --test test/*.test.mjs');
     assert.ok(packageJson.dependencies.svelte);
     assert.ok(packageJson.dependencies.vite);
+    assert.ok(packageJson.dependencies['pixi.js']);
+    assert.ok(packageJson.dependencies.gsap);
     assert.equal(packageJson.dependencies.react, undefined);
     assert.equal(packageJson.dependencies['react-dom'], undefined);
     assert.equal(packageJson.dependencies['@vitejs/plugin-react'], undefined);
@@ -34,6 +36,7 @@ describe('@retail-kiosk/kiosk-player package', () => {
       assert.ok(appSource.includes(marker), `missing ${marker}`);
     }
     assert.match(appSource, /sandbox="allow-scripts allow-forms"/);
+    assert.match(appSource, /PixiPrizeWheel/);
     assert.doesNotMatch(appSource, /allow-same-origin/);
   });
 
@@ -87,7 +90,7 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.match(fixtureSource, /segment-label/);
     assert.match(fixtureSource, /-0,50 € Ristorante/);
     assert.match(fixtureSource, /-1 € Casa di Mama/);
-    assert.match(fixtureSource, /QR recette pizza/);
+    assert.match(fixtureSource, /QR Pizza/);
     assert.match(fixtureSource, /wheel\.animate/);
   });
 
@@ -95,16 +98,17 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.match(fixtureSource, /visual_wheel/);
     assert.match(fixtureSource, /segmentIndexForOutcome/);
     assert.match(appSource, /segmentIndexForOutcome\(outcomeId/);
+    assert.match(appSource, /targetSegmentIndex=\{currentSegmentIndex\}/);
     assert.match(appSource, /type: 'presentation'/);
     assert.doesNotMatch(fixtureSource, /createTicket|Math\.random\(\) \*/);
     assert.doesNotMatch(appSource, /ticket_code|createTicket|qr_payload_template\.replaceAll|Math\.random\(\) \*/);
   });
 
   it('keeps the presentation wheel mounted long enough to visibly spin before result reveal', () => {
-    assert.match(appSource, /const wheelSpinRevealMs = 4_200/);
+    assert.match(appSource, /const wheelSpinRevealMs = 5_600/);
     assert.match(appSource, /let wheelSpinning = false/);
     assert.match(appSource, /if \(wheelSpinning \|\| sessionState === 'playing'/);
-    assert.match(appSource, /postPresentation\(\{ action: 'spin', segmentIndex, label: title \}\)/);
+    assert.match(appSource, /spinNonce=\{spinCount\}/);
     assert.match(appSource, /setTimeout\(\(\) => \{\n\s+wheelSpinning = false;\n\s+setReveal\(nextReveal\);/);
   });
 

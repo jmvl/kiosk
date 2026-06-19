@@ -17,6 +17,8 @@
   "dependencies": {
     "@retail-kiosk/shared-types": "workspace:*",
     "@sveltejs/vite-plugin-svelte": "latest",
+    "gsap": "^3.15.0",
+    "pixi.js": "^8.19.0",
     "svelte": "latest",
     "typescript": "^5.9.3",
     "vite": "latest"

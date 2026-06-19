@@ -4,6 +4,7 @@
   import { createRuntimeClient } from './runtime-client.js';
   import { bridgeProtocol, mountPackageBridge } from './package-bridge.js';
   import { drOetkerManifest, drOetkerModuleHtml, localized, segmentIndexForOutcome, type CampaignLocale, type CampaignOutcome } from './demo-package.js';
+  import PixiPrizeWheel from './PixiPrizeWheel.svelte';
   import './styles.css';
 
   type Screen = 'idle' | 'game' | 'result' | 'maintenance' | 'error';
@@ -13,7 +14,7 @@
   const runtimeClient = createRuntimeClient();
   const defaultLanguage: CampaignLocale = 'fr-BE';
   const resultRevealResetMs = 12_000;
-  const wheelSpinRevealMs = 4_200;
+  const wheelSpinRevealMs = 5_600;
 
   let runtimeState: RuntimeState | null = null;
   let selectedLanguage: CampaignLocale = defaultLanguage;
@@ -44,8 +45,16 @@
     return state?.current_session?.session_language ?? fallbackLanguage;
   }
 
+  function friendlyTicketStatus(status: string | null, fallback: Reveal | null): string {
+    if (status === 'printed') return language === 'fr-BE' ? 'Ticket imprimé' : 'Ticket afgedrukt';
+    if (status === 'printing' || status === 'created') return language === 'fr-BE' ? 'Ticket en cours' : 'Ticket wordt afgedrukt';
+    if (status === 'failed') return language === 'fr-BE' ? 'Aide caisse requise' : 'Kassahulp vereist';
+    return fallback?.status ?? (language === 'fr-BE' ? 'Ticket prêt' : 'Ticket klaar');
+  }
+
   function customerTicketSummary(latestTicket: unknown, fallback: Reveal | null): Reveal {
     const renderPayload = recordValue(latestTicket, 'render_payload');
+    const rawStatus = textValue(recordValue(latestTicket, 'print_status'));
     return {
       title: textValue(recordValue(latestTicket, 'title'))
         ?? textValue(recordValue(renderPayload, 'reward_label'))
@@ -56,9 +65,7 @@
         ?? textValue(recordValue(renderPayload, 'cashier_instruction'))
         ?? fallback?.body
         ?? 'Présentez le ticket imprimé à la caisse.',
-      status: textValue(recordValue(latestTicket, 'print_status'))
-        ?? fallback?.status
-        ?? 'Ticket prêt',
+      status: friendlyTicketStatus(rawStatus, fallback),
       ...(fallback?.outcomeId ? { outcomeId: fallback.outcomeId } : {}),
     };
   }
@@ -197,6 +204,7 @@
     error = null;
     quizMessage = null;
     clearWheelSpinTimer();
+    wheelSpinning = true;
     try {
       const response = await runtimeClient.startSpin();
       const outcome = isCampaignOutcome(response.outcome) ? response.outcome : null;
@@ -316,15 +324,25 @@
           </dl>
         {/if}
       </div>
-      <iframe
-        use:packageBridge
-        bind:this={packageFrame}
-        title="Dr. Oetker Pizza Wheel presentation module"
-        class="package-frame pizza-frame"
-        sandbox="allow-scripts allow-forms"
-        referrerpolicy="no-referrer"
-        srcdoc={drOetkerModuleHtml}
-      ></iframe>
+      <div class="wheel-stack">
+        <PixiPrizeWheel
+          segments={drOetkerManifest.visual_wheel.segments}
+          locale={language}
+          targetSegmentIndex={currentSegmentIndex}
+          spinNonce={spinCount}
+          spinning={wheelSpinning}
+          statusLabel={wheelSpinning ? (language === 'fr-BE' ? 'La roue tourne' : 'Het wiel draait') : 'Concours · Wedstrijd'}
+        />
+        <iframe
+          use:packageBridge
+          bind:this={packageFrame}
+          title="Dr. Oetker Pizza Wheel presentation bridge"
+          class="bridge-frame"
+          sandbox="allow-scripts allow-forms"
+          referrerpolicy="no-referrer"
+          srcdoc={drOetkerModuleHtml}
+        ></iframe>
+      </div>
     </section>
   {/if}
 
