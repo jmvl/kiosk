@@ -115,16 +115,21 @@ describe('local backend admin telemetry', () => {
       if (key === 'lpstat -o') return { code: 0, stdout: 'ICOD-PT80KM-29 kiosk-test 1024 Sat 13 Jun 2026\n', stderr: '' };
       return { code: 1, stdout: '', stderr: 'not mocked' };
     };
+    let centralHealthUrl = '';
     const telemetry = await collectAdminTelemetry({ ...localBackendConfigFromEnv(), host: '127.0.0.1', port: 8787, serialTokenPort: '/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0' }, {
       runner,
       env: { CENTRAL_API_BASE_URL: 'http://central.example.test', TELEMETRY_DISK_PATH: '/tmp' },
-      fetchImpl: async () => new Response('ok', { status: 200 }),
+      fetchImpl: async (url) => {
+        centralHealthUrl = String(url);
+        return new Response('ok', { status: 200 });
+      },
       now: new Date('2026-06-13T12:00:00.000Z'),
     });
     assert.equal(telemetry.generated_at, '2026-06-13T12:00:00.000Z');
     assert.equal(telemetry.network.active_interface, 'wlan0');
     assert.equal(telemetry.network.gateway, '192.168.1.1');
     assert.equal(telemetry.network.central_api.status, 'ok');
+    assert.equal(centralHealthUrl, 'http://central.example.test/healthz');
     assert.equal(telemetry.system.disk.used_percent, 40);
     assert.equal(telemetry.system.systemd_user_service.active, 'active');
     assert.equal(telemetry.system.port_bind.listeners.length, 1);

@@ -271,7 +271,7 @@ async function collectCentralApi(url: string | null, fetchImpl: typeof fetch, ti
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetchImpl(new URL('/health', url).toString(), { method: 'GET', signal: controller.signal });
+    const response = await fetchImpl(new URL('/healthz', url).toString(), { method: 'GET', signal: controller.signal });
     return { status: response.ok ? 'ok' : 'error', url, http_status: response.status, error: response.ok ? null : `HTTP ${response.status}` };
   } catch (error) {
     return { status: 'error', url, http_status: null, error: error instanceof Error ? error.message : String(error) };
