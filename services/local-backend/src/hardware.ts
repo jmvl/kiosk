@@ -177,7 +177,11 @@ export class SerialTokenAdapter implements TokenAdapter {
   }
 
   async #open(): Promise<void> {
-    const stty = await this.#commandRunner('stty', ['-F', this.config.port, String(this.config.baudRate), 'raw', '-echo', '-icanon', 'min', '0', 'time', '1']);
+    // Keep the TTY read blocking until at least one byte arrives. With VMIN=0/VTIME>0,
+    // Node's fs.ReadStream can observe zero-length reads on an idle CH340 TTY as EOF,
+    // close the descriptor, and leave the adapter reporting "online" while no longer
+    // listening for coin pulses. VMIN=1/VTIME=0 keeps the stream open between inserts.
+    const stty = await this.#commandRunner('stty', ['-F', this.config.port, String(this.config.baudRate), 'raw', '-echo', '-icanon', 'min', '1', 'time', '0']);
     if (stty.code !== 0) {
       this.#lastError = `stty failed for ${this.config.port}: ${stty.stderr || stty.stdout || `exit ${stty.code}`}`;
       this.#scheduleReconnect();
