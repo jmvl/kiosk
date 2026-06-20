@@ -84,6 +84,7 @@
   $: languageLocked = Boolean(runtimeState?.current_session?.session_language || (runtimeState?.current_session?.quiz_attempts ?? 0) > 0 || runtimeState?.current_session?.quiz_passed);
   $: canSpin = runtimeState?.current_session?.state === 'playing' && runtimeState?.current_session?.quiz_passed === true;
   $: screen = screenFor(runtimeState, error, reveal);
+  $: wheelPhase = screen === 'game' && Boolean(runtimeState?.current_session?.quiz_passed || canSpin || wheelSpinning);
   $: ticketSummary = customerTicketSummary(reveal?.ticket ?? null, reveal);
   $: currentSegmentIndex = reveal?.outcomeId ? segmentIndexForOutcome(reveal.outcomeId, Math.max(spinCount - 1, 0)) : 0;
 
@@ -281,7 +282,7 @@
   }
 </script>
 
-<main class={`kiosk-shell screen-${screen}`}>
+<main class={`kiosk-shell screen-${screen} ${wheelPhase ? 'wheel-mode' : ''}`}>
   <header class="top-bar">
     <div>
       <p class="eyebrow">Concours · Wedstrijd</p>
@@ -302,37 +303,28 @@
   {/if}
 
   {#if screen === 'game'}
-    <section class="stage game-grid pizza-game">
-      <div class="quiz-panel">
-        <p class="eyebrow">Question</p>
-        <h2>{localized(drOetkerManifest.quiz.question, language)}</h2>
-        <div class="language-switch" aria-label="FR NL language switch">
-          <button class:active-language={language === 'fr-BE'} disabled={languageLocked || busy} type="button" on:click={() => selectLanguage('fr-BE')}>FR</button>
-          <button class:active-language={language === 'nl-BE'} disabled={languageLocked || busy} type="button" on:click={() => selectLanguage('nl-BE')}>NL</button>
+    {#if !wheelPhase}
+      <section class="stage quiz-stage pizza-game">
+        <div class="quiz-panel">
+          <p class="eyebrow">Question concours</p>
+          <h2>{localized(drOetkerManifest.quiz.question, language)}</h2>
+          <div class="language-switch" aria-label="FR NL language switch">
+            <button class:active-language={language === 'fr-BE'} disabled={languageLocked || busy} type="button" on:click={() => selectLanguage('fr-BE')}>FR</button>
+            <button class:active-language={language === 'nl-BE'} disabled={languageLocked || busy} type="button" on:click={() => selectLanguage('nl-BE')}>NL</button>
+          </div>
+          <div class="answer-grid">
+            {#each drOetkerManifest.quiz.choices as choice}
+              <button type="button" disabled={busy || canSpin} on:click={() => submitAnswer(choice.choice_id)}>{localized(choice.label, language)}</button>
+            {/each}
+          </div>
+          {#if quizMessage}<p class="quiz-message">{quizMessage}</p>{/if}
+          {#if hqDebugControlsEnabled}
+            <dl class="session-list" aria-label="HQ debug session diagnostics">
+              <dt>HQ debug state</dt><dd>{runtimeState?.current_session?.state ?? runtimeState?.runtime.mode}</dd>
+              <dt>HQ debug bridge telemetry</dt><dd>{telemetry.length} events</dd>
+            </dl>
+          {/if}
         </div>
-        <div class="answer-grid">
-          {#each drOetkerManifest.quiz.choices as choice}
-            <button type="button" disabled={busy || canSpin} on:click={() => submitAnswer(choice.choice_id)}>{localized(choice.label, language)}</button>
-          {/each}
-        </div>
-        {#if quizMessage}<p class="quiz-message">{quizMessage}</p>{/if}
-        <button class="primary spin-button" type="button" disabled={!canSpin || busy} on:click={startSpin}>{language === 'fr-BE' ? 'Faire tourner' : 'Draai'}</button>
-        {#if hqDebugControlsEnabled}
-          <dl class="session-list" aria-label="HQ debug session diagnostics">
-            <dt>HQ debug state</dt><dd>{runtimeState?.current_session?.state ?? runtimeState?.runtime.mode}</dd>
-            <dt>HQ debug bridge telemetry</dt><dd>{telemetry.length} events</dd>
-          </dl>
-        {/if}
-      </div>
-      <div class="wheel-stack">
-        <PixiPrizeWheel
-          segments={drOetkerManifest.visual_wheel.segments}
-          locale={language}
-          targetSegmentIndex={currentSegmentIndex}
-          spinNonce={spinCount}
-          spinning={wheelSpinning}
-          statusLabel={wheelSpinning ? (language === 'fr-BE' ? 'La roue tourne' : 'Het wiel draait') : 'Concours · Wedstrijd'}
-        />
         <iframe
           use:packageBridge
           bind:this={packageFrame}
@@ -342,8 +334,38 @@
           referrerpolicy="no-referrer"
           srcdoc={drOetkerModuleHtml}
         ></iframe>
-      </div>
-    </section>
+      </section>
+    {:else}
+      <section class="stage wheel-stage pizza-wheel-stage">
+        <div class="wheel-hero-copy">
+          <p class="eyebrow">À vous de jouer</p>
+          <h2>{language === 'fr-BE' ? 'Faites tourner la roue' : 'Draai aan het wiel'}</h2>
+          <p>{language === 'fr-BE' ? 'La question est validée. Lancez la roue pour découvrir votre ticket.' : 'De vraag is goed. Draai het wiel en ontdek uw ticket.'}</p>
+          <button class="primary spin-button hero-spin" type="button" disabled={!canSpin || busy || wheelSpinning} on:click={startSpin}>
+            {wheelSpinning ? (language === 'fr-BE' ? 'La roue tourne…' : 'Het wiel draait…') : (language === 'fr-BE' ? 'Lancer la roue' : 'Start het wiel')}
+          </button>
+        </div>
+        <div class="wheel-stack wheel-stack-full">
+          <PixiPrizeWheel
+            segments={drOetkerManifest.visual_wheel.segments}
+            locale={language}
+            targetSegmentIndex={currentSegmentIndex}
+            spinNonce={spinCount}
+            spinning={wheelSpinning}
+            statusLabel={wheelSpinning ? (language === 'fr-BE' ? 'La roue tourne' : 'Het wiel draait') : (language === 'fr-BE' ? 'Prêt à lancer' : 'Klaar om te draaien')}
+          />
+          <iframe
+            use:packageBridge
+            bind:this={packageFrame}
+            title="Dr. Oetker Pizza Wheel presentation bridge"
+            class="bridge-frame"
+            sandbox="allow-scripts allow-forms"
+            referrerpolicy="no-referrer"
+            srcdoc={drOetkerModuleHtml}
+          ></iframe>
+        </div>
+      </section>
+    {/if}
   {/if}
 
   {#if screen === 'result'}

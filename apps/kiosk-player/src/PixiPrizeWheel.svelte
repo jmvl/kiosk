@@ -12,12 +12,12 @@
   export let spinning = false;
   export let statusLabel = 'Concours · Wedstrijd';
 
-  const wheelSize = 660;
+  const wheelSize = 900;
   const center = wheelSize / 2;
-  const radius = 300;
-  const labelRadius = 218;
-  const sectorCount = 12;
-  const colors = [0xf7d37f, 0xfff1d5, 0xd84624, 0xf5ba62, 0x2f7d32, 0xfffaf0, 0xa8321d, 0xffdf8a, 0xffffff, 0x3e8c43];
+  const radius = 408;
+  const labelRadius = 296;
+  const minimumSectorCount = 6;
+  const colors = [0xffe4a0, 0xd84624, 0xfff8ec, 0xf5ba62, 0x2f7d32, 0xa8321d];
 
   let host: HTMLDivElement;
   let app: Application | null = null;
@@ -28,6 +28,8 @@
   let currentRotation = 0;
   let activeTween: gsap.core.Tween | null = null;
   let loopTween: gsap.core.Tween | null = null;
+
+  $: sectorCount = Math.max(segments.length, minimumSectorCount);
 
   $: if (ready && spinning !== lastSpinning) {
     lastSpinning = spinning;
@@ -115,17 +117,19 @@
     }
 
     const outerRing = new Graphics()
-      .circle(center, center, radius + 16)
-      .stroke({ width: 26, color: 0xd84624, alpha: 1 })
-      .circle(center, center, radius - 38)
-      .stroke({ width: 12, color: 0xfff8ec, alpha: 0.95 });
+      .circle(center, center, radius + 18)
+      .stroke({ width: 34, color: 0xffffff, alpha: 1 })
+      .circle(center, center, radius + 39)
+      .stroke({ width: 18, color: 0xd84624, alpha: 1 })
+      .circle(center, center, radius - 54)
+      .stroke({ width: 14, color: 0xfff8ec, alpha: 0.95 });
 
     const hub = new Graphics()
-      .circle(center, center, 76)
+      .circle(center, center, 102)
       .fill(0xfff8ec)
-      .circle(center, center, 54)
-      .stroke({ width: 12, color: 0xd84624, alpha: 1 })
-      .circle(center, center, 24)
+      .circle(center, center, 72)
+      .stroke({ width: 15, color: 0xd84624, alpha: 1 })
+      .circle(center, center, 32)
       .fill(0x2f7d32);
 
     nextWheel.addChild(graphic, outerRing);
@@ -137,15 +141,15 @@
       const text = new Text({
         text: label,
         style: {
-          fill: '#321407',
+          fill: '#2b1404',
           fontFamily: 'Inter, system-ui, sans-serif',
-          fontSize: 34,
+          fontSize: 46,
           fontWeight: '900',
           align: 'center',
           wordWrap: true,
-          wordWrapWidth: 92,
-          lineHeight: 36,
-          dropShadow: { color: '#fff8ec', blur: 4, angle: 0, distance: 1, alpha: 0.9 },
+          wordWrapWidth: 140,
+          lineHeight: 46,
+          dropShadow: { color: '#fff8ec', blur: 8, angle: 0, distance: 2, alpha: 1 },
         },
       });
       text.anchor.set(0.5);
@@ -220,31 +224,32 @@
 <style>
   .pixi-wheel-card {
     min-height: 58vh;
+    width: 100%;
     display: grid;
     place-items: center;
     align-content: center;
-    gap: 12px;
+    gap: clamp(8px, 1.5vmin, 18px);
     border-radius: 34px;
     background:
-      radial-gradient(circle at 50% 42%, #fff8ec 0 34%, #f7d37f 35% 48%, transparent 49%),
-      linear-gradient(180deg, #fff8ec, #ffe9c6);
-    box-shadow: 0 30px 90px #0008;
+      radial-gradient(circle at 50% 46%, #fff8ec 0 31%, #f7d37f 32% 43%, transparent 44%),
+      radial-gradient(circle at 50% 48%, #d8462436 0 42%, transparent 68%);
+    box-shadow: none;
     overflow: hidden;
   }
 
   .wheel-pointer {
     width: 0;
     height: 0;
-    border-left: 30px solid transparent;
-    border-right: 30px solid transparent;
-    border-top: 60px solid #2f7d32;
-    filter: drop-shadow(0 7px 0 #19481c);
+    border-left: 42px solid transparent;
+    border-right: 42px solid transparent;
+    border-top: 82px solid #2f7d32;
+    filter: drop-shadow(0 9px 0 #19481c) drop-shadow(0 0 18px #fff8ecaa);
     z-index: 2;
-    margin-bottom: -22px;
+    margin-bottom: -34px;
   }
 
   .pixi-wheel-host {
-    width: min(62vmin, 640px);
+    width: min(78vmin, 940px);
     aspect-ratio: 1;
     display: grid;
     place-items: center;
@@ -260,7 +265,8 @@
     display: grid;
     gap: 3px;
     text-align: center;
-    color: #3b1f12;
+    color: #fff8e7;
+    text-shadow: 0 3px 18px #0008;
   }
 
   .wheel-caption strong {
@@ -270,7 +276,7 @@
   }
 
   .wheel-caption span {
-    color: #d84624;
+    color: #ffe27a;
     font-weight: 900;
     font-size: clamp(15px, 1.8vmin, 24px);
   }
