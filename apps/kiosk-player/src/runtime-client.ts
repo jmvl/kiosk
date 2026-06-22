@@ -34,6 +34,7 @@ export interface RuntimeClient {
   startDevSession(payload?: Record<string, unknown>): Promise<RuntimeState>;
   submitQuizAnswer(payload: { language: 'fr-BE' | 'nl-BE'; choice_id: string }): Promise<{ quiz: QuizAnswerResponse; state: RuntimeState }>;
   startSpin(): Promise<SpinStartResponse>;
+  completeSpin(): Promise<SpinCompleteResponse>;
   requestPrint(payload?: Record<string, unknown>): Promise<{ state: RuntimeState; ticket?: unknown; print?: unknown }>;
   enterMaintenance(): Promise<RuntimeState>;
   exitMaintenance(): Promise<RuntimeState>;
@@ -49,6 +50,12 @@ export interface QuizAnswerResponse {
 }
 
 export interface SpinStartResponse {
+  outcome: unknown;
+  session: unknown;
+  state: RuntimeState;
+}
+
+export interface SpinCompleteResponse {
   outcome: unknown;
   ticket?: unknown;
   print?: unknown;
@@ -112,6 +119,9 @@ export function createRuntimeClient(config: RuntimeClientConfig = runtimeConfigF
     },
     async startSpin() {
       return request<SpinStartResponse>('/spin/start', { method: 'POST', body: JSON.stringify({}) });
+    },
+    async completeSpin() {
+      return request<SpinCompleteResponse>('/spin/complete', { method: 'POST', body: JSON.stringify({}) });
     },
     async requestPrint(payload = {}) {
       return request<{ state: RuntimeState; ticket?: unknown; print?: unknown }>('/print/test', { method: 'POST', body: JSON.stringify(payload) });

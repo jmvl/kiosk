@@ -621,7 +621,11 @@ describe('local backend fake hardware API', () => {
         assert.equal(answer.json().state.current_session.quiz_passed, true);
         const spin = await app.inject({ method: 'POST', url: '/spin/start', headers: auth, payload: {} });
         assert.equal(spin.statusCode, 200);
-        const body = spin.json();
+        assert.equal(spin.json().session.state, 'result_pending');
+        assert.equal(runtime.db.prepare('select count(*) as count from tickets').get().count, language === 'fr-BE' ? 0 : 1);
+        const complete = await app.inject({ method: 'POST', url: '/spin/complete', headers: auth, payload: {} });
+        assert.equal(complete.statusCode, 200);
+        const body = complete.json();
         assert.equal(body.ticket.render_payload.language, language);
         assert.equal(body.ticket.render_payload.ticket_template_id, 'voucher-v1');
         assert.equal(body.ticket.render_payload.bitmap_asset_id, 'ticket-bitmap');
@@ -655,7 +659,12 @@ describe('local backend fake hardware API', () => {
       const spin = await app.inject({ method: 'POST', url: '/spin/start', headers: auth, payload: {} });
       assert.equal(spin.statusCode, 200);
       assert.equal(spin.json().outcome.outcome_id, 'slice-coupon');
-      assert.equal(spin.json().ticket.render_payload.outcome_id, 'slice-coupon');
+      assert.equal(spin.json().session.state, 'result_pending');
+      assert.equal(runtime.db.prepare('select count(*) as count from tickets').get().count, 0);
+      const complete = await app.inject({ method: 'POST', url: '/spin/complete', headers: auth, payload: {} });
+      assert.equal(complete.statusCode, 200);
+      assert.equal(complete.json().outcome.outcome_id, 'slice-coupon');
+      assert.equal(complete.json().ticket.render_payload.outcome_id, 'slice-coupon');
     } finally {
       await app.close();
     }

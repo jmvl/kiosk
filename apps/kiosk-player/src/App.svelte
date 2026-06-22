@@ -47,7 +47,7 @@
 
   function friendlyTicketStatus(status: string | null, fallback: Reveal | null): string {
     if (status === 'printed') return language === 'fr-BE' ? 'Ticket imprimé' : 'Ticket afgedrukt';
-    if (status === 'printing' || status === 'created') return language === 'fr-BE' ? 'Ticket en cours' : 'Ticket wordt afgedrukt';
+    if (status === 'printing' || status === 'created') return language === 'fr-BE' ? 'Ticket à présenter en caisse' : 'Ticket tonen aan de kassa';
     if (status === 'failed') return language === 'fr-BE' ? 'Aide caisse requise' : 'Kassahulp vereist';
     return fallback?.status ?? (language === 'fr-BE' ? 'Ticket prêt' : 'Ticket klaar');
   }
@@ -213,11 +213,11 @@
       spinCount += 1;
       const segmentIndex = outcomeId ? segmentIndexForOutcome(outcomeId, spinCount - 1) : 0;
       const title = outcome ? localized(outcome.localized_label, language) : 'Résultat confirmé';
-      const nextReveal = {
+      const revealDraft = {
         title,
         body: outcome ? localized(outcome.cashier_instruction, language) : (language === 'fr-BE' ? 'Résultat confirmé par le kiosque.' : 'Resultaat bevestigd door de kiosk.'),
-        status: outcome?.print_ticket === false ? (language === 'fr-BE' ? 'Aucun ticket imprimé' : 'Geen ticket afgedrukt') : (language === 'fr-BE' ? 'Ticket en cours' : 'Ticket wordt afgedrukt'),
-        ticket: response.ticket ?? null,
+        status: outcome?.print_ticket === false ? (language === 'fr-BE' ? 'Aucun ticket imprimé' : 'Geen ticket afgedrukt') : (language === 'fr-BE' ? 'Ticket à présenter en caisse' : 'Ticket tonen aan de kassa'),
+        ticket: null,
         ...(outcomeId ? { outcomeId } : {}),
       } satisfies Reveal;
       wheelSpinning = true;
@@ -225,9 +225,19 @@
       await tick();
       applyRuntimeState(response.state);
       wheelSpinTimer = setTimeout(() => {
-        wheelSpinning = false;
-        setReveal(nextReveal);
-        applyRuntimeState(response.state);
+        void (async () => {
+          try {
+            const completion = await runtimeClient.completeSpin();
+            wheelSpinning = false;
+            setReveal({ ...revealDraft, ticket: completion.ticket ?? null });
+            applyRuntimeState(completion.state);
+          } catch (err) {
+            wheelSpinning = false;
+            error = err instanceof Error ? err.message : String(err);
+          } finally {
+            wheelSpinTimer = null;
+          }
+        })();
       }, wheelSpinRevealMs);
     } catch (err) {
       clearWheelSpinTimer();
@@ -288,7 +298,7 @@
       <p class="eyebrow">Concours · Wedstrijd</p>
       <h1>{drOetkerManifest.display_name}</h1>
     </div>
-    <div class="runtime-pill">{runtimeState?.runtime.mode ?? 'connecting'}</div>
+    <div class="runtime-pill">{language === 'fr-BE' ? 'Prêt' : 'Klaar'}</div>
   </header>
 
   {#if screen === 'idle'}
@@ -297,7 +307,7 @@
       <p class="eyebrow">Token start</p>
       <h2>Pizza Wheel</h2>
       <p>{selectedLanguage === 'fr-BE' ? 'Insérez le jeton reçu en caisse pour participer.' : 'Steek de jeton van de kassa in om deel te nemen.'}</p>
-      <button class="primary temp-start-button" type="button" disabled={busy} on:click={startTempGameSession}>TEMP: start game</button>
+      <button class="primary temp-start-button" type="button" disabled={busy} on:click={startTempGameSession}>{selectedLanguage === 'fr-BE' ? 'Commencer le jeu' : 'Start het spel'}</button>
       {#if hqDebugControlsEnabled}<button class="primary" type="button" on:click={startFakeSession}>HQ debug: inject fake token</button>{/if}
     </section>
   {/if}
@@ -325,22 +335,13 @@
             </dl>
           {/if}
         </div>
-        <iframe
-          use:packageBridge
-          bind:this={packageFrame}
-          title="Dr. Oetker Pizza Wheel presentation bridge"
-          class="bridge-frame"
-          sandbox="allow-scripts allow-forms"
-          referrerpolicy="no-referrer"
-          srcdoc={drOetkerModuleHtml}
-        ></iframe>
       </section>
     {:else}
       <section class="stage wheel-stage pizza-wheel-stage">
         <div class="wheel-hero-copy">
           <p class="eyebrow">À vous de jouer</p>
           <h2>{language === 'fr-BE' ? 'Faites tourner la roue' : 'Draai aan het wiel'}</h2>
-          <p>{language === 'fr-BE' ? 'La question est validée. Lancez la roue pour découvrir votre ticket.' : 'De vraag is goed. Draai het wiel en ontdek uw ticket.'}</p>
+          <p>{language === 'fr-BE' ? 'La question est validée. Lancez ou faites glisser la roue pour découvrir votre ticket.' : 'De vraag is goed. Start of sleep aan het wiel en ontdek uw ticket.'}</p>
           <button class="primary spin-button hero-spin" type="button" disabled={!canSpin || busy || wheelSpinning} on:click={startSpin}>
             {wheelSpinning ? (language === 'fr-BE' ? 'La roue tourne…' : 'Het wiel draait…') : (language === 'fr-BE' ? 'Lancer la roue' : 'Start het wiel')}
           </button>
@@ -353,6 +354,7 @@
             spinNonce={spinCount}
             spinning={wheelSpinning}
             statusLabel={wheelSpinning ? (language === 'fr-BE' ? 'La roue tourne' : 'Het wiel draait') : (language === 'fr-BE' ? 'Prêt à lancer' : 'Klaar om te draaien')}
+            on:spinrequest={startSpin}
           />
           <iframe
             use:packageBridge
@@ -370,7 +372,7 @@
 
   {#if screen === 'result'}
     <section class="stage result-card pizza-result">
-      <p class="eyebrow">Result / reset</p>
+      <p class="eyebrow">{language === 'fr-BE' ? 'Résultat' : 'Resultaat'}</p>
       <div class="result-wheel" style={`--segment-index:${currentSegmentIndex}`} aria-hidden="true"></div>
       <h2>{ticketSummary.title}</h2>
       <p>{ticketSummary.body}</p>

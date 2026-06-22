@@ -61,11 +61,14 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.match(appSource, /quiz_passed === true/);
     assert.match(clientSource, /'\/quiz\/answer'/);
     assert.match(clientSource, /'\/spin\/start'/);
+    assert.match(clientSource, /'\/spin\/complete'/);
   });
 
-  it('exposes a temporary no-token start button while coin hardware is being calibrated', () => {
+  it('exposes a customer-safe no-token start button while coin hardware is being calibrated', () => {
     assert.match(appSource, /startTempGameSession/);
-    assert.match(appSource, /TEMP: start game/);
+    assert.match(appSource, /Commencer le jeu/);
+    assert.match(appSource, /Start het spel/);
+    assert.doesNotMatch(appSource, />TEMP: start game</);
     assert.match(clientSource, /startDevSession/);
     assert.match(clientSource, /'\/dev\/session\/start'/);
   });
@@ -104,12 +107,36 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.doesNotMatch(appSource, /ticket_code|createTicket|qr_payload_template\.replaceAll|Math\.random\(\) \*/);
   });
 
-  it('keeps the presentation wheel mounted long enough to visibly spin before result reveal', () => {
+  it('keeps the question and spinning wheel on separate customer screens', () => {
+    assert.match(appSource, /screen === 'game'/);
+    assert.match(appSource, /!wheelPhase/);
+    assert.match(appSource, /{:else}/);
+    assert.match(appSource, /<section class="stage quiz-stage pizza-game">/);
+    assert.match(appSource, /<section class="stage wheel-stage pizza-wheel-stage">/);
+    const quizSection = appSource.slice(appSource.indexOf('<section class="stage quiz-stage pizza-game">'), appSource.indexOf('{:else}'));
+    assert.doesNotMatch(quizSection, /PixiPrizeWheel|use:packageBridge|bridge-frame/);
+  });
+
+  it('keeps the presentation wheel mounted long enough to visibly spin, then prints before result reveal', () => {
     assert.match(appSource, /const wheelSpinRevealMs = 5_600/);
     assert.match(appSource, /let wheelSpinning = false/);
     assert.match(appSource, /if \(wheelSpinning \|\| sessionState === 'playing'/);
     assert.match(appSource, /spinNonce=\{spinCount\}/);
-    assert.match(appSource, /setTimeout\(\(\) => \{\n\s+wheelSpinning = false;\n\s+setReveal\(nextReveal\);/);
+    assert.match(appSource, /on:spinrequest=\{startSpin\}/);
+    assert.match(appSource, /const completion = await runtimeClient\.completeSpin\(\)/);
+    assert.match(appSource, /setReveal\(\{ \.\.\.revealDraft, ticket: completion\.ticket \?\? null \}\)/);
+  });
+
+  it('supports direct wheel drag/flick starts and randomized non-edge stops', () => {
+    const wheelSource = readFileSync(new URL('../src/PixiPrizeWheel.svelte', import.meta.url), 'utf8');
+    assert.match(wheelSource, /createEventDispatcher/);
+    assert.match(wheelSource, /dispatch\('spinrequest'\)/);
+    assert.match(wheelSource, /pointerdown/);
+    assert.match(wheelSource, /pointermove/);
+    assert.match(wheelSource, /pointerup/);
+    assert.match(wheelSource, /randomOffsetInsideSector/);
+    assert.match(wheelSource, /radiansPerSector \* 0\.55/);
+    assert.doesNotMatch(wheelSource, /Math\.PI \/ 2 - \(targetSector \* radiansPerSector\)/);
   });
 
   it('keeps Dr. Oetker result reveal scoped to the current run and auto-resets to idle', () => {
@@ -121,7 +148,8 @@ describe('@retail-kiosk/kiosk-player package', () => {
     assert.match(appSource, /ticketSummary = customerTicketSummary\(reveal\?\.ticket \?\? null, reveal\)/);
     assert.doesNotMatch(appSource, /ticketSummary = customerTicketSummary\(runtimeState\?\.latest_ticket/);
     assert.match(appSource, /ticket: null,\n\s+\}\);/);
-    assert.match(appSource, /ticket: response\.ticket \?\? null/);
+    assert.match(appSource, /ticket: null,/);
+    assert.match(appSource, /completion\.ticket \?\? null/);
     assert.match(appSource, /postPresentation\(\{ action: 'idle', label: localized\(drOetkerManifest\.quiz\.question, activeLanguage\(\)\) \}\)/);
   });
 

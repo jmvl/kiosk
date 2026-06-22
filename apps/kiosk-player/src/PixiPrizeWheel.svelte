@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { createEventDispatcher, onDestroy, onMount } from 'svelte';
   import { Application, Container, Graphics, Text } from 'pixi.js';
   import { gsap } from 'gsap';
   import type { CampaignLocale, VisualWheelSegment } from './demo-package.js';
@@ -18,6 +18,7 @@
   const labelRadius = 296;
   const minimumSectorCount = 6;
   const colors = [0xffe4a0, 0xd84624, 0xfff8ec, 0xf5ba62, 0x2f7d32, 0xa8321d];
+  const dispatch = createEventDispatcher<{ spinrequest: void }>();
 
   let host: HTMLDivElement;
   let app: Application | null = null;
@@ -28,6 +29,9 @@
   let currentRotation = 0;
   let activeTween: gsap.core.Tween | null = null;
   let loopTween: gsap.core.Tween | null = null;
+  let dragStartAngle = 0;
+  let dragStartRotation = 0;
+  let dragActive = false;
 
   $: sectorCount = Math.max(segments.length, minimumSectorCount);
 
@@ -100,6 +104,12 @@
     nextWheel.pivot.set(center, center);
     nextWheel.position.set(center, center);
     nextWheel.rotation = currentRotation;
+    nextWheel.eventMode = 'static';
+    nextWheel.cursor = spinning ? 'default' : 'grab';
+    nextWheel.on('pointerdown', onWheelPointerDown);
+    nextWheel.on('pointermove', onWheelPointerMove);
+    nextWheel.on('pointerup', onWheelPointerUp);
+    nextWheel.on('pointerupoutside', onWheelPointerUp);
 
     const sourceCount = Math.max(segments.length, 1);
     const radiansPerSector = (Math.PI * 2) / sectorCount;
@@ -186,11 +196,50 @@
     return matches[spinNonce % Math.max(matches.length, 1)] ?? sourceIndex;
   }
 
+  function pointerAngle(event: { global?: { x: number; y: number } }): number {
+    const point = event.global ?? { x: center, y: center };
+    return Math.atan2(point.y - center, point.x - center);
+  }
+
+  function normalizeDelta(delta: number): number {
+    return Math.atan2(Math.sin(delta), Math.cos(delta));
+  }
+
+  function onWheelPointerDown(event: { global?: { x: number; y: number } }) {
+    if (!wheel || spinning || activeTween) return;
+    loopTween?.kill();
+    loopTween = null;
+    dragActive = true;
+    dragStartAngle = pointerAngle(event);
+    dragStartRotation = currentRotation;
+    wheel.cursor = 'grabbing';
+  }
+
+  function onWheelPointerMove(event: { global?: { x: number; y: number } }) {
+    if (!wheel || !dragActive || spinning || activeTween) return;
+    const nextAngle = pointerAngle(event);
+    const delta = normalizeDelta(nextAngle - dragStartAngle);
+    currentRotation = dragStartRotation + delta;
+    wheel.rotation = currentRotation;
+  }
+
+  function onWheelPointerUp(event: { global?: { x: number; y: number } }) {
+    if (!wheel || !dragActive) return;
+    const releaseAngle = pointerAngle(event);
+    const totalDelta = normalizeDelta(releaseAngle - dragStartAngle);
+    dragActive = false;
+    wheel.cursor = spinning ? 'default' : 'grab';
+    if (!spinning && !activeTween && Math.abs(totalDelta) > 0.18) {
+      dispatch('spinrequest');
+    }
+  }
+
   function spinTo(index: number) {
     if (!wheel || !segments.length) return;
     const radiansPerSector = (Math.PI * 2) / sectorCount;
     const targetSector = sectorForSegmentIndex(index);
-    const stopRotation = Math.PI / 2 - (targetSector * radiansPerSector);
+    const randomOffsetInsideSector = (Math.random() - 0.5) * radiansPerSector * 0.55;
+    const stopRotation = -(targetSector * radiansPerSector) - randomOffsetInsideSector;
     const currentModulo = ((currentRotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     const stopModulo = ((stopRotation % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
     const delta = (stopModulo - currentModulo + Math.PI * 2) % (Math.PI * 2);
@@ -253,6 +302,8 @@
     aspect-ratio: 1;
     display: grid;
     place-items: center;
+    touch-action: none;
+    cursor: grab;
   }
 
   .pixi-wheel-host :global(canvas) {
@@ -279,6 +330,11 @@
     color: #ffe27a;
     font-weight: 900;
     font-size: clamp(15px, 1.8vmin, 24px);
+  }
+
+  @media (orientation: portrait) {
+    .pixi-wheel-card { min-height: 68dvh; }
+    .pixi-wheel-host { width: min(90vmin, 980px); }
   }
 
   @media (max-width: 760px) {
