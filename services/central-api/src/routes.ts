@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { CommandResult, EventEnvelope, HeartbeatPayload } from '@retail-kiosk/shared-types';
-import type { CentralRepository } from './repository.js';
+import type { AdminEventsFilter, CentralRepository } from './repository.js';
 
 export interface EventBatchRequest {
   kiosk_id: string;
@@ -18,9 +18,25 @@ async function readJson(request: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-function writeJson(response: ServerResponse, statusCode: number, body: unknown): void {
-  response.writeHead(statusCode, { 'content-type': 'application/json' });
+function corsHeaders(request: IncomingMessage): Record<string, string> {
+  const origin = request.headers.origin;
+  return {
+    'access-control-allow-origin': typeof origin === 'string' && origin.length > 0 ? origin : '*',
+    'access-control-allow-methods': 'GET,POST,PUT,OPTIONS',
+    'access-control-allow-headers': 'content-type,authorization',
+    'access-control-max-age': '600',
+    vary: 'origin',
+  };
+}
+
+function writeJson(request: IncomingMessage, response: ServerResponse, statusCode: number, body: unknown): void {
+  response.writeHead(statusCode, { ...corsHeaders(request), 'content-type': 'application/json' });
   response.end(JSON.stringify(body));
+}
+
+function writeOptions(request: IncomingMessage, response: ServerResponse): void {
+  response.writeHead(204, corsHeaders(request));
+  response.end();
 }
 
 function badRequest(message: string): never {
@@ -85,25 +101,68 @@ export async function recordCommandResult(repository: CentralRepository, payload
   return { ok: true };
 }
 
+export async function getAdminFleetOverview(repository: CentralRepository) {
+  return { ok: true, fleet: await repository.getFleetOverview() };
+}
+
+export async function listAdminKiosks(repository: CentralRepository) {
+  return { ok: true, kiosks: await repository.listKiosks() };
+}
+
+export async function getAdminKiosk(repository: CentralRepository, kioskId: string) {
+  const kiosk = await repository.getKiosk(kioskId);
+  if (!kiosk) return { ok: false, error: 'not_found' };
+  return { ok: true, kiosk };
+}
+
+export async function listAdminSchedules(repository: CentralRepository) {
+  return { ok: true, ...(await repository.listSchedules()) };
+}
+
+export async function listAdminDeployments(repository: CentralRepository) {
+  return { ok: true, ...(await repository.listDeployments()) };
+}
+
+export async function listAdminEvents(repository: CentralRepository, filters: Partial<AdminEventsFilter>) {
+  return { ok: true, ...(await repository.listEvents(filters)) };
+}
+
 export function createCentralApiServer(repository: CentralRepository) {
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
-      if (request.method === 'GET' && url.pathname === '/healthz') return writeJson(response, 200, { ok: true });
-      if (request.method === 'POST' && url.pathname === '/v1/heartbeats') return writeJson(response, 200, await recordHeartbeat(repository, await readJson(request)));
-      if (request.method === 'POST' && url.pathname === '/v1/events/batch') return writeJson(response, 200, await ingestEventBatch(repository, await readJson(request)));
+      if (request.method === 'OPTIONS') return writeOptions(request, response);
+      if (request.method === 'GET' && url.pathname === '/healthz') return writeJson(request, response, 200, { ok: true });
+      if (request.method === 'GET' && url.pathname === '/v1/admin/fleet/overview') return writeJson(request, response, 200, await getAdminFleetOverview(repository));
+      if (request.method === 'GET' && url.pathname === '/v1/admin/kiosks') return writeJson(request, response, 200, await listAdminKiosks(repository));
+      const adminKioskMatch = url.pathname.match(/^\/v1\/admin\/kiosks\/([^/]+)$/);
+      if (request.method === 'GET' && adminKioskMatch?.[1]) {
+        const body = await getAdminKiosk(repository, decodeURIComponent(adminKioskMatch[1]));
+        return writeJson(request, response, body.ok ? 200 : 404, body);
+      }
+      if (request.method === 'GET' && url.pathname === '/v1/admin/schedules') return writeJson(request, response, 200, await listAdminSchedules(repository));
+      if (request.method === 'GET' && url.pathname === '/v1/admin/deployments') return writeJson(request, response, 200, await listAdminDeployments(repository));
+      if (request.method === 'GET' && url.pathname === '/v1/admin/events') {
+        return writeJson(request, response, 200, await listAdminEvents(repository, {
+          limit: Number(url.searchParams.get('limit') ?? 50),
+          kiosk_id: url.searchParams.get('kiosk_id') || null,
+          event_type: url.searchParams.get('event_type') || null,
+        }));
+      }
+      if (request.method === 'POST' && url.pathname === '/v1/heartbeats') return writeJson(request, response, 200, await recordHeartbeat(repository, await readJson(request)));
+      if (request.method === 'POST' && url.pathname === '/v1/events/batch') return writeJson(request, response, 200, await ingestEventBatch(repository, await readJson(request)));
       const commandPollMatch = url.pathname.match(/^\/v1\/kiosks\/([^/]+)\/commands$/);
-      if (request.method === 'GET' && commandPollMatch?.[1]) return writeJson(response, 200, await pollDeviceCommands(repository, commandPollMatch[1], Number(url.searchParams.get('limit') ?? 25)));
+      if (request.method === 'GET' && commandPollMatch?.[1]) return writeJson(request, response, 200, await pollDeviceCommands(repository, commandPollMatch[1], Number(url.searchParams.get('limit') ?? 25)));
       const commandResultMatch = url.pathname.match(/^\/v1\/commands\/([^/]+)\/result$/);
       if (request.method === 'POST' && commandResultMatch?.[1]) {
         const body = await readJson(request);
         if (isObject(body) && body.command_id === undefined) body.command_id = commandResultMatch[1];
-        return writeJson(response, 200, await recordCommandResult(repository, body));
+        return writeJson(request, response, 200, await recordCommandResult(repository, body));
       }
-      return writeJson(response, 404, { ok: false, error: 'not_found' });
+      return writeJson(request, response, 404, { ok: false, error: 'not_found' });
     } catch (error) {
       const statusCode = error instanceof Error && error.name === 'BadRequestError' ? 400 : 500;
-      return writeJson(response, statusCode, { ok: false, error: error instanceof Error ? error.message : 'unknown error' });
+      return writeJson(request, response, statusCode, { ok: false, error: error instanceof Error ? error.message : 'unknown error' });
     }
   });
 }

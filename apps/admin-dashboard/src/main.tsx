@@ -200,6 +200,70 @@ type Schedule = {
 
 type SchedulesResponse = { schedules: Schedule[] };
 
+type CentralControlPlaneMetadata = {
+  ready: boolean;
+  source: 'central-control-plane';
+  tables_available: boolean;
+  message: string;
+};
+
+type CentralKioskSummary = {
+  kiosk_id: string;
+  location_id: string;
+  name: string;
+  status: string;
+  runtime_health: string | null;
+  player_health: string | null;
+  printer_status: string | null;
+  token_status: string | null;
+  active_package: string | null;
+  schedule_version: number;
+  queue_length: number | null;
+  last_heartbeat_at: string | null;
+  last_session_at: string | null;
+  last_error: string | null;
+};
+
+type CentralFleetOverviewResponse = {
+  ok: boolean;
+  fleet: {
+    generated_at: string;
+    totals: { kiosks: number; locations: number; healthy: number; degraded: number; offline: number; unknown: number };
+    kiosks: CentralKioskSummary[];
+  };
+};
+
+type CentralKiosksResponse = { ok: boolean; kiosks: CentralKioskSummary[] };
+type CentralSchedulesResponse = { ok: boolean; generated_at: string; control_plane: CentralControlPlaneMetadata; schedules: unknown[] };
+type CentralDeploymentsResponse = { ok: boolean; generated_at: string; control_plane: CentralControlPlaneMetadata; deployments: unknown[] };
+
+type CentralEventRow = {
+  event_id: string;
+  kiosk_id: string;
+  session_id: string | null;
+  local_sequence: number;
+  event_type: string;
+  occurred_at: string;
+  ingested_at: string;
+  schema_version: number;
+  payload: Record<string, unknown>;
+};
+
+type CentralEventsResponse = {
+  ok: boolean;
+  generated_at: string;
+  filters: { limit: number; kiosk_id: string | null; event_type: string | null };
+  rows: CentralEventRow[];
+};
+
+type CentralBackOfficeData = {
+  fleet: LoadState<CentralFleetOverviewResponse>;
+  kiosks: LoadState<CentralKiosksResponse>;
+  schedules: LoadState<CentralSchedulesResponse>;
+  deployments: LoadState<CentralDeploymentsResponse>;
+  events: LoadState<CentralEventsResponse>;
+};
+
 type ScheduleForm = {
   schedule_id: string;
   timezone: string;
@@ -215,6 +279,8 @@ type ScheduleForm = {
 type LoadState<T> = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: T };
 
 const endpoint = (path: string) => path;
+const centralApiBaseUrl = ((import.meta as unknown as { env?: { VITE_CENTRAL_API_BASE_URL?: string } }).env?.VITE_CENTRAL_API_BASE_URL ?? '').replace(/\/$/, '');
+const centralEndpoint = (path: string) => `${centralApiBaseUrl}${path}`;
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(endpoint(path), {
@@ -223,6 +289,54 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   });
   if (!response.ok) throw new Error(`${path} returned HTTP ${response.status}`);
   return await response.json() as T;
+}
+
+async function fetchCentralJson<T>(path: string): Promise<T> {
+  if (!centralApiBaseUrl) throw new Error('Set VITE_CENTRAL_API_BASE_URL to enable central back office reads.');
+  const response = await fetch(centralEndpoint(path));
+  if (!response.ok) throw new Error(`${path} returned HTTP ${response.status}`);
+  return await response.json() as T;
+}
+
+async function loadCentralEndpoint<T>(path: string): Promise<LoadState<T>> {
+  try {
+    return { status: 'ready', data: await fetchCentralJson<T>(path) };
+  } catch (error) {
+    return { status: 'error', message: error instanceof Error ? error.message : `${path} unavailable` };
+  }
+}
+
+function useCentralBackOfficeData() {
+  const [central, setCentral] = React.useState<LoadState<CentralBackOfficeData>>(
+    centralApiBaseUrl ? { status: 'loading' } : { status: 'error', message: 'Central API unavailable: configure VITE_CENTRAL_API_BASE_URL.' },
+  );
+
+  const refreshCentral = React.useCallback(async () => {
+    if (!centralApiBaseUrl) {
+      setCentral({ status: 'error', message: 'Central API unavailable: configure VITE_CENTRAL_API_BASE_URL.' });
+      return;
+    }
+    try {
+      const [fleet, kiosks, schedules, deployments, events] = await Promise.all([
+        loadCentralEndpoint<CentralFleetOverviewResponse>('/v1/admin/fleet/overview'),
+        loadCentralEndpoint<CentralKiosksResponse>('/v1/admin/kiosks'),
+        loadCentralEndpoint<CentralSchedulesResponse>('/v1/admin/schedules'),
+        loadCentralEndpoint<CentralDeploymentsResponse>('/v1/admin/deployments'),
+        loadCentralEndpoint<CentralEventsResponse>('/v1/admin/events?limit=12'),
+      ]);
+      setCentral({ status: 'ready', data: { fleet, kiosks, schedules, deployments, events } });
+    } catch (error) {
+      setCentral({ status: 'error', message: error instanceof Error ? error.message : 'Central API unavailable' });
+    }
+  }, []);
+
+  React.useEffect(() => {
+    void refreshCentral();
+    const timer = window.setInterval(() => void refreshCentral(), 15000);
+    return () => window.clearInterval(timer);
+  }, [refreshCentral]);
+
+  return { central, refreshCentral, centralApiBaseUrl };
 }
 
 function useKioskData() {
@@ -825,6 +939,103 @@ function localized(value: LocalizedText | undefined, locale: 'fr-BE' | 'nl-BE' =
   return value[locale] ?? value['fr-BE'] ?? value['nl-BE'] ?? 'not configured';
 }
 
+function CentralSchedulesDeploymentsPanel({ central, baseUrl, onRefresh }: { central: LoadState<CentralBackOfficeData>; baseUrl: string; onRefresh: () => Promise<void> }) {
+  const data = central.status === 'ready' ? central.data : null;
+  const fleet = data?.fleet.status === 'ready' ? data.fleet.data : null;
+  const kioskRead = data?.kiosks.status === 'ready' ? data.kiosks.data : null;
+  const scheduleRead = data?.schedules.status === 'ready' ? data.schedules.data : null;
+  const deploymentRead = data?.deployments.status === 'ready' ? data.deployments.data : null;
+  const eventRead = data?.events.status === 'ready' ? data.events.data : null;
+  const schedules = scheduleRead?.schedules ?? [];
+  const deployments = deploymentRead?.deployments ?? [];
+  const events = eventRead?.rows ?? [];
+  const controlPlane = scheduleRead?.control_plane ?? deploymentRead?.control_plane ?? null;
+  const totals = fleet?.fleet.totals;
+  const kiosks = kioskRead?.kiosks ?? fleet?.fleet.kiosks ?? [];
+
+  return (
+    <section className="panel central-panel" aria-label="Central back office schedules and deployments" id="central-back-office">
+      <div className="panel-heading">
+        <div>
+          <p className="section-label">Central back office</p>
+          <h2>Schedules & deployments</h2>
+        </div>
+        <div className="pill-row">
+          <Pill tone={baseUrl ? (central.status === 'ready' ? 'good' : 'warn') : 'neutral'}>{baseUrl ? 'central API configured' : 'central API not configured'}</Pill>
+          {controlPlane ? <Pill tone={controlPlane.ready ? 'good' : 'warn'}>{controlPlane.ready ? 'control plane ready' : 'read-only unavailable'}</Pill> : null}
+        </div>
+      </div>
+
+      <p className="muted">Central fleet and rollout reads use VITE_CENTRAL_API_BASE_URL and the /v1/admin/* endpoints. This section is read-only and shows empty states instead of demo data.</p>
+      {central.status === 'loading' ? <p className="muted">Loading central back office data…</p> : null}
+      {central.status === 'error' ? <p className="error-text">{central.message}</p> : null}
+      {data?.fleet.status === 'error' ? <p className="error-text">Fleet overview: {data.fleet.message}</p> : null}
+      {data?.kiosks.status === 'error' ? <p className="error-text">Kiosks: {data.kiosks.message}</p> : null}
+      {data?.schedules.status === 'error' ? <p className="error-text">Schedules: {data.schedules.message}</p> : null}
+      {data?.deployments.status === 'error' ? <p className="error-text">Deployments: {data.deployments.message}</p> : null}
+      {data?.events.status === 'error' ? <p className="error-text">Central events: {data.events.message}</p> : null}
+      {controlPlane && !controlPlane.ready ? <p className="scheduler-note">{controlPlane.message}</p> : null}
+
+      <div className="central-summary-grid">
+        <StatusCard title="Central kiosks" value={totals ? String(totals.kiosks) : 'unavailable'} hint={totals ? `${totals.healthy} healthy · ${totals.degraded} degraded · ${totals.offline} offline` : 'GET /v1/admin/fleet/overview'} tone={totals ? 'neutral' : 'warn'} />
+        <StatusCard title="Locations" value={totals ? String(totals.locations) : 'unavailable'} hint="central fleet scope" tone={totals ? 'neutral' : 'warn'} />
+        <StatusCard title="Schedules" value={central.status === 'ready' ? String(schedules.length) : 'unavailable'} hint="GET /v1/admin/schedules" tone={schedules.length > 0 ? 'good' : 'neutral'} />
+        <StatusCard title="Events" value={eventRead ? String(events.length) : 'unavailable'} hint="GET /v1/admin/events" tone={events.length > 0 ? 'good' : 'neutral'} />
+      </div>
+
+      {kiosks.length > 0 ? (
+        <div className="central-table-scroll" role="region" aria-label="Central kiosk list" tabIndex={0}>
+          <table className="central-table">
+            <thead><tr><th>Kiosk</th><th>Status</th><th>Package</th><th>Heartbeat</th></tr></thead>
+            <tbody>
+              {kiosks.slice(0, 8).map((kiosk) => (
+                <tr key={kiosk.kiosk_id}>
+                  <td><strong>{kiosk.name}</strong><small>{kiosk.kiosk_id} · {kiosk.location_id}</small></td>
+                  <td><Pill tone={toneForStatus(kiosk.status)}>{kiosk.status}</Pill></td>
+                  <td>{kiosk.active_package ?? 'none'}<small>schedule v{kiosk.schedule_version}</small></td>
+                  <td>{formatDateTime(kiosk.last_heartbeat_at)}<small>{kiosk.last_error ?? 'no central error'}</small></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : central.status === 'ready' ? <p className="muted">No central kiosks returned by /v1/admin/kiosks.</p> : null}
+
+      <div className="central-read-grid">
+        <article>
+          <h3>Schedules</h3>
+          {data?.schedules.status === 'loading' ? <p className="muted">Loading central schedules…</p> : null}
+          {data?.schedules.status === 'error' ? <p className="error-text">{data.schedules.message}</p> : null}
+          {schedules.length > 0 ? <pre>{JSON.stringify(schedules, null, 2)}</pre> : data?.schedules.status === 'ready' ? <p className="muted">No central schedules returned.</p> : null}
+        </article>
+        <article>
+          <h3>Deployments</h3>
+          {data?.deployments.status === 'loading' ? <p className="muted">Loading central deployments…</p> : null}
+          {data?.deployments.status === 'error' ? <p className="error-text">{data.deployments.message}</p> : null}
+          {deployments.length > 0 ? <pre>{JSON.stringify(deployments, null, 2)}</pre> : data?.deployments.status === 'ready' ? <p className="muted">No central deployments returned.</p> : null}
+        </article>
+        <article>
+          <h3>Recent central events</h3>
+          {data?.events.status === 'loading' ? <p className="muted">Loading central events…</p> : null}
+          {data?.events.status === 'error' ? <p className="error-text">{data.events.message}</p> : null}
+          {events.length > 0 ? (
+            <ul className="central-event-list">
+              {events.map((event) => (
+                <li key={event.event_id}>
+                  <strong>{event.event_type}</strong>
+                  <span>{event.kiosk_id} · seq {event.local_sequence} · {formatDateTime(event.occurred_at)}</span>
+                  <code>{event.event_id}</code>
+                </li>
+              ))}
+            </ul>
+          ) : data?.events.status === 'ready' ? <p className="muted">No central events returned.</p> : null}
+        </article>
+      </div>
+      <div className="button-row"><button className="secondary" type="button" onClick={() => void onRefresh()}>Refresh central reads</button></div>
+    </section>
+  );
+}
+
 function CampaignPreviewPanel({ preview }: { preview: LoadState<CampaignPreviewResponse> }) {
   if (preview.status === 'loading') {
     return <section className="panel campaign-preview-panel" aria-label="Campaign content preview"><p className="muted">Loading campaign content preview…</p></section>;
@@ -918,6 +1129,7 @@ function CampaignPreviewPanel({ preview }: { preview: LoadState<CampaignPreviewR
 
 function App() {
   const { health, state, schedules, telemetry, gameRuns, campaignPreview, lastRefresh, refresh } = useKioskData();
+  const { central, refreshCentral, centralApiBaseUrl } = useCentralBackOfficeData();
   const runtime = state.status === 'ready' ? state.data.runtime : null;
   const scheduler = state.status === 'ready' ? state.data.scheduler : null;
   const latestTicket = state.status === 'ready' ? state.data.latest_ticket : null;
@@ -1006,11 +1218,13 @@ function App() {
         <div>
           <p className="section-label">Retail kiosk platform</p>
           <h1>Kiosk operations cockpit</h1>
-          <p className="lede">Monitor the HQ kiosk, schedule local modules, check local hardware adapters, and exercise token, no-token, ticket, and print paths before physical device rollout.</p>
+          <p className="lede">Monitor the central fleet back office separately from local kiosk tools. Central reads are read-only; local panels still exercise the HQ kiosk runtime, hardware, schedules, tickets, and smoke paths.</p>
         </div>
         <div className="topbar-actions">
+          <a className="secondary-link" href="#central-back-office">Central back office</a>
+          <a className="secondary-link" href="#local-kiosk-tools">Local kiosk tools</a>
           <a className="secondary-link" href="/player">Open player</a>
-          <button onClick={() => void refresh()}>Refresh</button>
+          <button onClick={() => void refresh()}>Refresh local</button>
         </div>
       </header>
 
@@ -1019,6 +1233,14 @@ function App() {
         <Metric label="Mode" value={runtime?.mode ?? 'loading'} hint={runtime?.updated_at ? new Date(runtime.updated_at).toLocaleString() : 'waiting for runtime'} />
         <Metric label="Sequence" value={runtime ? String(runtime.local_sequence) : '…'} hint="append-only local event count" />
         <Metric label="Last refresh" value={lastRefresh ? lastRefresh.toLocaleTimeString() : '…'} hint="auto-refreshes every 5s" />
+      </section>
+
+      <CentralSchedulesDeploymentsPanel central={central} baseUrl={centralApiBaseUrl} onRefresh={refreshCentral} />
+
+      <section className="section-divider" id="local-kiosk-tools" aria-label="Local kiosk tools">
+        <p className="section-label">Local kiosk tools</p>
+        <h2>HQ kiosk runtime controls</h2>
+        <p>These panels talk to the local kiosk backend and keep existing local actions intact.</p>
       </section>
 
       <div className="grid">

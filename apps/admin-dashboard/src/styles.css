@@ -157,11 +157,92 @@ button.secondary { background: oklch(0.26 0.03 252); color: oklch(0.94 0.006 250
 .action-message { padding: 0.8rem; border-radius: 0.85rem; background: oklch(0.18 0.03 205); color: oklch(0.86 0.08 205) !important; }
 .error-text { color: oklch(0.86 0.11 28) !important; }
 
-.scheduler-panel, .telemetry-panel, .game-runs-panel, .campaign-preview-panel {
+.scheduler-panel, .telemetry-panel, .game-runs-panel, .campaign-preview-panel, .central-panel {
   grid-column: 1 / -1;
   display: grid;
   gap: 1rem;
 }
+
+.central-panel {
+  margin: 1rem 0;
+}
+
+.section-divider {
+  margin: 1.2rem 0 1rem;
+  padding: 1rem 1.2rem;
+  border-radius: 1.2rem;
+  background: oklch(0.18 0.022 252 / 0.82);
+  border: 1px solid oklch(0.34 0.032 252);
+}
+
+.section-divider h2 { margin: 0; font-size: 1.2rem; }
+.section-divider p:not(.section-label) { margin: 0.45rem 0 0; color: oklch(0.78 0.018 252); }
+
+.central-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.central-read-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.central-read-grid article {
+  min-width: 0;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: oklch(0.17 0.022 252);
+  border: 1px solid oklch(0.34 0.032 252);
+}
+
+.central-read-grid h3 { margin: 0 0 0.75rem; }
+.central-event-list { display: grid; gap: 0.65rem; margin: 0; padding: 0; list-style: none; }
+.central-event-list li { display: grid; gap: 0.22rem; }
+.central-event-list strong, .central-event-list span, .central-event-list code { display: block; }
+.central-event-list code { color: oklch(0.88 0.12 205); white-space: normal; word-break: break-word; }
+.central-read-grid pre {
+  max-height: 20rem;
+  overflow: auto;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: oklch(0.88 0.12 205);
+}
+
+.central-table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 1rem;
+  border: 1px solid oklch(0.34 0.032 252);
+}
+
+.central-table {
+  width: 100%;
+  min-width: 50rem;
+  border-collapse: collapse;
+  background: oklch(0.16 0.022 252);
+}
+
+.central-table th, .central-table td {
+  padding: 0.78rem 0.85rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid oklch(0.3 0.03 252);
+}
+
+.central-table th {
+  color: oklch(0.78 0.13 205);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.central-table small, .central-table strong { display: block; }
+.central-table small { margin-top: 0.25rem; }
 
 .status-card-grid {
   display: grid;
@@ -512,7 +593,7 @@ button.secondary { background: oklch(0.26 0.03 252); color: oklch(0.94 0.006 250
 
 @media (max-width: 850px) {
   .topbar, .login-card { grid-template-columns: 1fr; display: grid; }
-  .status-strip, .grid, .scheduler-summary, .scheduler-form, .status-card-grid, .display-grid, .readiness-grid, .action-button-grid, .peripheral-grid, .campaign-summary-grid, .campaign-preview-grid, .segment-list { grid-template-columns: 1fr; }
+  .status-strip, .grid, .scheduler-summary, .scheduler-form, .status-card-grid, .display-grid, .readiness-grid, .action-button-grid, .peripheral-grid, .campaign-summary-grid, .campaign-preview-grid, .segment-list, .central-summary-grid, .central-read-grid { grid-template-columns: 1fr; }
   .topbar h1 { font-size: 1.8rem; }
 }
 
