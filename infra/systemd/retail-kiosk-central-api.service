@@ -1,0 +1,20 @@
+# Template: install as ~/.config/systemd/user/retail-kiosk-central-api.service on the Hermes node.
+# For production, set CENTRAL_DATABASE_URL in the EnvironmentFile; without it the
+# service runs an in-memory development repository and loses fleet data on restart.
+[Unit]
+Description=Retail Kiosk Central API and Admin Dashboard - Hermes user service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=%h/.config/retail-kiosk-central/central-api.env
+WorkingDirectory=%h/projects/retail-kiosk-activation
+ExecStart=%h/.local/bin/node services/central-api/dist/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:%h/.local/state/retail-kiosk-central/logs/central-api.log
+StandardError=append:%h/.local/state/retail-kiosk-central/logs/central-api.err
+
+[Install]
+WantedBy=default.target

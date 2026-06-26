@@ -1,4 +1,6 @@
+import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { extname, join, normalize, resolve, sep } from 'node:path';
 import type { CommandResult, EventEnvelope, HeartbeatPayload } from '@retail-kiosk/shared-types';
 import type { AdminEventsFilter, CentralRepository } from './repository.js';
 
@@ -37,6 +39,57 @@ function writeJson(request: IncomingMessage, response: ServerResponse, statusCod
 function writeOptions(request: IncomingMessage, response: ServerResponse): void {
   response.writeHead(204, corsHeaders(request));
   response.end();
+}
+
+function contentTypeFor(path: string): string {
+  const extension = extname(path).toLowerCase();
+  if (extension === '.html') return 'text/html; charset=utf-8';
+  if (extension === '.js') return 'text/javascript; charset=utf-8';
+  if (extension === '.css') return 'text/css; charset=utf-8';
+  if (extension === '.svg') return 'image/svg+xml';
+  if (extension === '.png') return 'image/png';
+  if (extension === '.jpg' || extension === '.jpeg') return 'image/jpeg';
+  if (extension === '.ico') return 'image/x-icon';
+  if (extension === '.json') return 'application/json; charset=utf-8';
+  return 'application/octet-stream';
+}
+
+function safeStaticPath(root: string, pathname: string): string | null {
+  const relative = normalize(decodeURIComponent(pathname.replace(/^\/admin\/?/, '')));
+  if (relative.startsWith('..') || relative.includes(`${sep}..${sep}`)) return null;
+  const candidate = resolve(root, relative || 'index.html');
+  const normalizedRoot = resolve(root);
+  return candidate === normalizedRoot || candidate.startsWith(`${normalizedRoot}${sep}`) ? candidate : null;
+}
+
+function serveAdminStatic(request: IncomingMessage, response: ServerResponse, adminStaticDir: string, pathname: string): boolean {
+  if (request.method !== 'GET') return false;
+  if (pathname === '/') {
+    response.writeHead(302, { location: '/admin/' });
+    response.end();
+    return true;
+  }
+  if (pathname === '/admin') {
+    response.writeHead(302, { location: '/admin/' });
+    response.end();
+    return true;
+  }
+  if (!pathname.startsWith('/admin/')) return false;
+
+  const candidate = safeStaticPath(adminStaticDir, pathname);
+  const filePath = candidate && existsSync(candidate) && statSync(candidate).isFile() ? candidate : join(resolve(adminStaticDir), 'index.html');
+  if (!existsSync(filePath) || !statSync(filePath).isFile()) {
+    writeJson(request, response, 404, { ok: false, error: 'admin_static_not_found' });
+    return true;
+  }
+
+  response.writeHead(200, {
+    ...corsHeaders(request),
+    'content-type': contentTypeFor(filePath),
+    'cache-control': filePath.endsWith('index.html') ? 'no-cache' : 'public, max-age=31536000, immutable',
+  });
+  createReadStream(filePath).pipe(response);
+  return true;
 }
 
 function badRequest(message: string): never {
@@ -127,7 +180,11 @@ export async function listAdminEvents(repository: CentralRepository, filters: Pa
   return { ok: true, ...(await repository.listEvents(filters)) };
 }
 
-export function createCentralApiServer(repository: CentralRepository) {
+export interface CentralApiServerOptions {
+  adminStaticDir?: string;
+}
+
+export function createCentralApiServer(repository: CentralRepository, options: CentralApiServerOptions = {}) {
   return createServer(async (request, response) => {
     try {
       const url = new URL(request.url ?? '/', 'http://localhost');
@@ -159,6 +216,7 @@ export function createCentralApiServer(repository: CentralRepository) {
         if (isObject(body) && body.command_id === undefined) body.command_id = commandResultMatch[1];
         return writeJson(request, response, 200, await recordCommandResult(repository, body));
       }
+      if (options.adminStaticDir && serveAdminStatic(request, response, options.adminStaticDir, url.pathname)) return;
       return writeJson(request, response, 404, { ok: false, error: 'not_found' });
     } catch (error) {
       const statusCode = error instanceof Error && error.name === 'BadRequestError' ? 400 : 500;

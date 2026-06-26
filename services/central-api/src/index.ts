@@ -53,7 +53,8 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   const databaseUrl = process.env.CENTRAL_DATABASE_URL ?? process.env.DATABASE_URL;
   const repository = databaseUrl ? createPostgresCentralRepository(databaseUrl) : new InMemoryCentralRepository();
   const port = Number(process.env.PORT ?? 8080);
-  createCentralApiServer(repository).listen(port, () => {
-    console.log(`central-api listening on :${port}${databaseUrl ? '' : ' with in-memory repository'}`);
+  const adminStaticDir = process.env.CENTRAL_ADMIN_STATIC_DIR;
+  createCentralApiServer(repository, adminStaticDir ? { adminStaticDir } : {}).listen(port, () => {
+    console.log(`central-api listening on :${port}${databaseUrl ? '' : ' with in-memory repository'}${adminStaticDir ? ` and admin static ${adminStaticDir}` : ''}`);
   });
 }

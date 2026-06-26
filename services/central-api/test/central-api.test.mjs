@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import { createCentralApiServer, InMemoryCentralRepository, recordHeartbeat, ingestEventBatch } from '../dist/index.js';
 
@@ -183,6 +186,42 @@ describe('@retail-kiosk/central-api', () => {
 
       assert.equal(response.status, 404);
       assert.deepEqual(await response.json(), { ok: false, error: 'not_found' });
+    } finally {
+      await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
+    }
+  });
+
+  it('serves the built central admin dashboard under /admin when configured', async () => {
+    const adminStaticDir = mkdtempSync(join(tmpdir(), 'central-admin-static-'));
+    const assetsDir = join(adminStaticDir, 'assets');
+    mkdirSync(assetsDir);
+    writeFileSync(join(adminStaticDir, 'index.html'), '<!doctype html><title>Central Admin</title><script type="module" src="/admin/assets/app.js"></script>');
+    writeFileSync(join(assetsDir, 'app.js'), 'console.log("central admin")');
+
+    const server = createCentralApiServer(new InMemoryCentralRepository(), { adminStaticDir });
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+    try {
+      const address = server.address();
+      assert.equal(typeof address, 'object');
+      const baseUrl = `http://127.0.0.1:${address.port}`;
+
+      const redirect = await fetch(`${baseUrl}/admin`, { redirect: 'manual' });
+      assert.equal(redirect.status, 302);
+      assert.equal(redirect.headers.get('location'), '/admin/');
+
+      const admin = await fetch(`${baseUrl}/admin/`);
+      assert.equal(admin.status, 200);
+      assert.match(admin.headers.get('content-type') ?? '', /text\/html/);
+      assert.match(await admin.text(), /Central Admin/);
+
+      const asset = await fetch(`${baseUrl}/admin/assets/app.js`);
+      assert.equal(asset.status, 200);
+      assert.match(asset.headers.get('content-type') ?? '', /text\/javascript/);
+      assert.match(await asset.text(), /central admin/);
+
+      const api = await fetch(`${baseUrl}/v1/admin/fleet/overview`);
+      assert.equal(api.status, 200);
+      assert.equal((await api.json()).ok, true);
     } finally {
       await new Promise((resolve, reject) => server.close((error) => error ? reject(error) : resolve()));
     }

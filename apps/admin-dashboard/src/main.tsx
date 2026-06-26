@@ -279,7 +279,8 @@ type ScheduleForm = {
 type LoadState<T> = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; data: T };
 
 const endpoint = (path: string) => path;
-const centralApiBaseUrl = ((import.meta as unknown as { env?: { VITE_CENTRAL_API_BASE_URL?: string } }).env?.VITE_CENTRAL_API_BASE_URL ?? '').replace(/\/$/, '');
+const configuredCentralApiBaseUrl = ((import.meta as unknown as { env?: { VITE_CENTRAL_API_BASE_URL?: string } }).env?.VITE_CENTRAL_API_BASE_URL ?? '').replace(/\/$/, '');
+const centralApiBaseUrl = configuredCentralApiBaseUrl || (globalThis.location?.pathname.startsWith('/admin') && globalThis.location?.port === '8877' ? globalThis.location.origin : '');
 const centralEndpoint = (path: string) => `${centralApiBaseUrl}${path}`;
 
 async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
