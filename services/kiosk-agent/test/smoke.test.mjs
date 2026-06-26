@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it } from 'node:test';
 import packageJson from '../package.json' with { type: 'json' };
 import {
@@ -43,11 +46,17 @@ class FakeClient {
   constructor(commands) {
     this.commands = commands;
     this.heartbeats = [];
+    this.eventBatches = [];
     this.results = [];
   }
 
   async submitHeartbeat(payload) {
     this.heartbeats.push(payload);
+  }
+
+  async submitEvents(kioskId, events) {
+    this.eventBatches.push({ kioskId, events });
+    return { inserted_count: events.length, duplicate_count: 0, events: events.map((event) => ({ event_id: event.event_id, status: 'inserted' })) };
   }
 
   async pollCommands(kioskId, limit) {
@@ -124,6 +133,40 @@ describe('@retail-kiosk/kiosk-agent skeleton', () => {
     assert.equal(fakeClient.results[1].completed_at, undefined);
     assert.ok(fakeClient.results[2].completed_at);
     assert.equal(fakeClient.results[2].evidence.action, 'test_print');
+  });
+
+  it('uploads local events after the persisted cursor and advances it only after central ack', async () => {
+    const cursorPath = join(mkdtempSync(join(tmpdir(), 'kiosk-agent-cursor-')), 'last-sequence.txt');
+    const fakeClient = new FakeClient([]);
+    const exportedEvent = {
+      event_id: 'evt-2',
+      kiosk_id: 'hq-001',
+      local_sequence: 2,
+      event_type: 'spin_started',
+      occurred_at: '2026-06-12T12:00:01.000Z',
+      payload: { source: 'test' },
+      schema_version: 1,
+    };
+    const localFetch = async (url, init) => {
+      assert.equal(String(url), 'http://127.0.0.1:8787/admin/api/events/export?after_sequence=0&limit=1');
+      assert.equal(init.headers.authorization, 'Bearer local-sync-token');
+      return new Response(JSON.stringify({
+        events: [exportedEvent],
+        cursor: { after_sequence: 0, next_after_sequence: 2, count: 1, limit: 1 },
+      }), { status: 200, headers: { 'content-type': 'application/json' } });
+    };
+
+    const result = await runKioskAgentCycle({
+      config: { ...config(), local_backend_base_url: 'http://127.0.0.1:8787', local_backend_auth_token: 'local-sync-token', event_upload_batch_size: 1, last_uploaded_sequence_path: cursorPath },
+      client: fakeClient,
+      state: createCommandExecutionState(),
+      localBackendFetchImpl: localFetch,
+      now: new Date('2026-06-12T12:00:00.000Z'),
+    });
+
+    assert.deepEqual(result.events, { attempted: 1, uploaded: 1, next_after_sequence: 2 });
+    assert.deepEqual(fakeClient.eventBatches, [{ kioskId: 'hq-001', events: [exportedEvent] }]);
+    assert.equal(readFileSync(cursorPath, 'utf8'), '2\n');
   });
 
   it('fails safe when an allowlisted command requires confirmation', async () => {

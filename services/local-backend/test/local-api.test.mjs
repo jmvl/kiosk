@@ -205,6 +205,30 @@ describe('local backend admin telemetry', () => {
     }
   });
 
+  it('exports local events for central sync before the admin static wildcard', async () => {
+    const { app, runtime, auth } = await testServer({ kioskId: 'HQ001' });
+    try {
+      const first = appendEvent(runtime.db, { kioskId: 'HQ001', eventType: 'sync_test_first', payload: { ok: true }, occurredAt: '2026-06-22T10:00:00.000Z' });
+      const second = appendEvent(runtime.db, { kioskId: 'HQ001', eventType: 'sync_test_second', payload: { count: 2 }, occurredAt: '2026-06-22T10:00:01.000Z' });
+
+      const response = await app.inject({ method: 'GET', url: `/admin/api/events/export?after_sequence=${first.local_sequence}&limit=1`, headers: auth });
+      assert.equal(response.statusCode, 200);
+      const body = response.json();
+      assert.equal(body.cursor.after_sequence, first.local_sequence);
+      assert.equal(body.cursor.next_after_sequence, second.local_sequence);
+      assert.equal(body.cursor.count, 1);
+      assert.equal(body.cursor.limit, 1);
+      assert.equal(body.events.length, 1);
+      assert.deepEqual(body.events[0], second);
+
+      const empty = await app.inject({ method: 'GET', url: `/admin/api/events/export?after_sequence=${second.local_sequence}`, headers: auth });
+      assert.equal(empty.statusCode, 200);
+      assert.deepEqual(empty.json().events, []);
+    } finally {
+      await app.close();
+    }
+  });
+
   it('serves admin static assets from workspace root when package start cwd is local-backend', async () => {
     const originalCwd = process.cwd();
     const root = mkdtempSync(join(tmpdir(), 'retail-kiosk-workspace-'));

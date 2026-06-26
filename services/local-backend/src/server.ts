@@ -3,7 +3,7 @@ import { stat } from 'node:fs/promises';
 import { dirname, extname, join, resolve, relative } from 'node:path';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import websocket from '@fastify/websocket';
-import type { SessionSnapshot } from '@retail-kiosk/shared-types';
+import type { EventEnvelope, SessionSnapshot } from '@retail-kiosk/shared-types';
 import type { LocalDatabase } from './db/sqlite.js';
 import { migrateDatabase } from './db/migrations.js';
 import { openLocalDatabase } from './db/sqlite.js';
@@ -142,6 +142,44 @@ function latestTicket(db: LocalDatabase): unknown {
     FROM tickets ORDER BY created_at DESC LIMIT 1`).get() as Record<string, unknown> | undefined;
   if (!row) return null;
   return { ...row, render_payload: JSON.parse(String(row.render_payload)) };
+}
+
+interface ExportedEventRow {
+  event_id: string;
+  kiosk_id: string;
+  session_id: string | null;
+  local_sequence: number;
+  event_type: string;
+  occurred_at: string;
+  payload: string;
+  schema_version: number;
+}
+
+function parseEventPayload(payload: string): Record<string, unknown> {
+  const parsed = JSON.parse(payload) as unknown;
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+}
+
+function exportEvents(db: LocalDatabase, options: { afterSequence?: number | undefined; limit?: number | undefined }): { events: EventEnvelope[]; cursor: { after_sequence: number; next_after_sequence: number | null; count: number; limit: number } } {
+  const afterSequence = Number.isFinite(options.afterSequence) ? Math.max(0, Math.trunc(options.afterSequence ?? 0)) : 0;
+  const limit = Number.isFinite(options.limit) ? Math.max(1, Math.min(500, Math.trunc(options.limit ?? 100))) : 100;
+  const rows = db.prepare(`SELECT event_id, kiosk_id, session_id, local_sequence, event_type, occurred_at, payload, schema_version
+    FROM events
+    WHERE local_sequence > ?
+    ORDER BY local_sequence ASC
+    LIMIT ?`).all(afterSequence, limit) as ExportedEventRow[];
+  const events = rows.map((row) => ({
+    event_id: row.event_id,
+    kiosk_id: row.kiosk_id,
+    ...(row.session_id === null ? {} : { session_id: row.session_id }),
+    local_sequence: row.local_sequence,
+    event_type: row.event_type,
+    occurred_at: row.occurred_at,
+    payload: parseEventPayload(row.payload),
+    schema_version: row.schema_version,
+  }));
+  const last = events.at(-1)?.local_sequence ?? null;
+  return { events, cursor: { after_sequence: afterSequence, next_after_sequence: last, count: events.length, limit } };
 }
 
 function stateSnapshot(runtime: LocalBackendRuntime): Record<string, unknown> {
@@ -422,6 +460,13 @@ export async function createLocalBackendServer(runtime = createLocalBackendRunti
   app.get('/admin/api/campaign-preview', async () => activeCampaignPreview(runtime));
   app.get('/admin/api/telemetry', async () => collectAdminTelemetry(runtime.config));
   app.get('/admin/api/game-runs', async () => ({ runs: listGameRunLog(runtime.db, 20) }));
+  app.get('/admin/api/events/export', async (request) => {
+    const query = request.query as Record<string, unknown>;
+    return exportEvents(runtime.db, {
+      afterSequence: typeof query.after_sequence === 'string' ? Number(query.after_sequence) : undefined,
+      limit: typeof query.limit === 'string' ? Number(query.limit) : undefined,
+    });
+  });
   app.get('/telemetry', async () => collectAdminTelemetry(runtime.config));
   app.get('/game-runs', async () => ({ runs: listGameRunLog(runtime.db, 20) }));
   app.get('/admin/*', async (request, reply) => {

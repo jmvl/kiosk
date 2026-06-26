@@ -1,13 +1,15 @@
 # Local Backend
 
-Local-first kiosk backend for hardware-safe control.
+Local-first kiosk backend for hardware-safe runtime control. The browser/player is presentation only; this service owns local session, event, ticket, hardware, schedule, and print truth.
 
-Current foundation:
+Current scope:
 
-- Fastify API on `127.0.0.1:8787`
-- WebSocket heartbeat endpoint
-- Simulated coin insertion endpoint
-- Simulated thermal print endpoint
-- In-memory event log for MVP prototype
+- Fastify API on `127.0.0.1:8787` by default.
+- Auth/CORS guard using optional `LOCAL_BACKEND_AUTH_TOKEN` and `LOCAL_BACKEND_ALLOWED_ORIGINS`.
+- Runtime state and event persistence in SQLite with monotonic local event sequences.
+- Player/runtime endpoints for sessions, quiz answers, spins, tickets, prints, maintenance, and schedules.
+- WebSocket state broadcasts for kiosk UI/runtime updates.
+- Admin/local ops endpoints including telemetry, game runs, campaign preview, and `GET /admin/api/events/export` for central sync.
+- Fake and real hardware adapter paths for token input and CUPS printing.
 
-This service is the future owner of coin/prize/print truth. The browser is presentation only.
+`GET /admin/api/events/export` returns authenticated append-only event envelopes after `after_sequence`, capped by `limit`, plus a cursor with the next acknowledged local sequence for kiosk-agent uploads.

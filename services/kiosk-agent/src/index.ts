@@ -1,6 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { Command, CommandResult, CommandType, HeartbeatPayload } from '@retail-kiosk/shared-types';
+import type { Command, CommandResult, CommandType, EventEnvelope, HeartbeatPayload } from '@retail-kiosk/shared-types';
 
 export const allowedAgentCommandTypes = [
   'test_print',
@@ -17,8 +18,11 @@ export interface KioskAgentConfig {
   kiosk_id: string;
   location_id: string;
   central_api_base_url: string;
+  local_backend_base_url?: string;
+  local_backend_auth_token?: string;
   poll_interval_ms: number;
   command_poll_limit: number;
+  event_upload_batch_size: number;
   agent_version: string;
   runtime_version: string;
   player_version: string;
@@ -31,6 +35,7 @@ export interface KioskAgentConfig {
   player_health: HeartbeatPayload['player_health'];
   last_session_at?: string;
   last_error: string | null;
+  last_uploaded_sequence_path?: string;
   maintenance_state_path?: string;
   log_bundle_path?: string;
 }
@@ -70,15 +75,19 @@ export function loadKioskAgentConfig(options: ConfigLoadOptions = {}): KioskAgen
   setIfDefined('kiosk_id', env.KIOSK_ID);
   setIfDefined('location_id', env.KIOSK_LOCATION_ID ?? env.LOCATION_ID);
   setIfDefined('central_api_base_url', env.CENTRAL_API_BASE_URL ?? env.CENTRAL_API_URL);
+  setIfDefined('local_backend_base_url', env.LOCAL_BACKEND_BASE_URL ?? env.LOCAL_BACKEND_URL);
+  setIfDefined('local_backend_auth_token', env.KIOSK_AGENT_LOCAL_BACKEND_AUTH_TOKEN ?? env.LOCAL_BACKEND_AUTH_TOKEN);
   const heartbeatIntervalSeconds = numberFromEnv(env.HEARTBEAT_INTERVAL_SECONDS);
   setIfDefined('poll_interval_ms', numberFromEnv(env.KIOSK_AGENT_POLL_INTERVAL_MS) ?? (heartbeatIntervalSeconds === undefined ? undefined : heartbeatIntervalSeconds * 1000));
   setIfDefined('command_poll_limit', numberFromEnv(env.KIOSK_AGENT_COMMAND_POLL_LIMIT));
+  setIfDefined('event_upload_batch_size', numberFromEnv(env.KIOSK_AGENT_EVENT_UPLOAD_BATCH_SIZE));
   setIfDefined('agent_version', env.KIOSK_AGENT_VERSION);
   setIfDefined('runtime_version', env.KIOSK_RUNTIME_VERSION);
   setIfDefined('player_version', env.KIOSK_PLAYER_VERSION);
   setIfDefined('active_package', env.KIOSK_ACTIVE_PACKAGE);
   setIfDefined('schedule_version', numberFromEnv(env.KIOSK_SCHEDULE_VERSION));
   setIfDefined('queue_length', numberFromEnv(env.KIOSK_QUEUE_LENGTH));
+  setIfDefined('last_uploaded_sequence_path', env.KIOSK_AGENT_LAST_UPLOADED_SEQUENCE_PATH);
   setIfDefined('maintenance_state_path', env.KIOSK_MAINTENANCE_STATE_PATH);
   setIfDefined('log_bundle_path', env.KIOSK_LOG_BUNDLE_PATH);
   const merged: PartialConfig = { ...envConfig, ...fileConfig };
@@ -94,8 +103,11 @@ export function loadKioskAgentConfig(options: ConfigLoadOptions = {}): KioskAgen
     kiosk_id: kioskId,
     location_id: locationId,
     central_api_base_url: centralApiBaseUrl.replace(/\/+$/, ''),
+    ...(merged.local_backend_base_url ? { local_backend_base_url: merged.local_backend_base_url.replace(/\/+$/, '') } : {}),
+    ...(merged.local_backend_auth_token ? { local_backend_auth_token: merged.local_backend_auth_token } : {}),
     poll_interval_ms: merged.poll_interval_ms ?? 30_000,
     command_poll_limit: merged.command_poll_limit ?? 25,
+    event_upload_batch_size: merged.event_upload_batch_size ?? 100,
     agent_version: merged.agent_version ?? '0.0.0',
     runtime_version: merged.runtime_version ?? '0.0.0',
     player_version: merged.player_version ?? '0.0.0',
@@ -108,6 +120,7 @@ export function loadKioskAgentConfig(options: ConfigLoadOptions = {}): KioskAgen
     player_health: merged.player_health ?? 'unknown',
     ...(merged.last_session_at ? { last_session_at: merged.last_session_at } : {}),
     last_error: merged.last_error ?? null,
+    ...(merged.last_uploaded_sequence_path ? { last_uploaded_sequence_path: merged.last_uploaded_sequence_path } : {}),
     ...(merged.maintenance_state_path ? { maintenance_state_path: merged.maintenance_state_path } : {}),
     ...(merged.log_bundle_path ? { log_bundle_path: merged.log_bundle_path } : {}),
   };
@@ -139,6 +152,12 @@ export interface CentralAgentClientOptions {
   fetchImpl?: typeof fetch;
 }
 
+export interface EventBatchUploadResult {
+  inserted_count: number;
+  duplicate_count: number;
+  events: Array<{ event_id: string; status: 'inserted' | 'duplicate' }>;
+}
+
 export class CentralAgentClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -152,6 +171,11 @@ export class CentralAgentClient {
     await this.postJson('/v1/heartbeats', payload);
   }
 
+  async submitEvents(kioskId: string, events: EventEnvelope[]): Promise<EventBatchUploadResult> {
+    const body = await this.postJson('/v1/events/batch', { kiosk_id: kioskId, events });
+    return body as EventBatchUploadResult;
+  }
+
   async pollCommands(kioskId: string, limit: number): Promise<Command[]> {
     const response = await this.fetchImpl(`${this.baseUrl}/v1/kiosks/${encodeURIComponent(kioskId)}/commands?limit=${limit}`);
     if (!response.ok) throw new Error(`command poll failed with HTTP ${response.status}`);
@@ -163,13 +187,14 @@ export class CentralAgentClient {
     await this.postJson(`/v1/commands/${encodeURIComponent(result.command_id)}/result`, result);
   }
 
-  private async postJson(path: string, payload: unknown): Promise<void> {
+  private async postJson(path: string, payload: unknown): Promise<unknown> {
     const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(payload),
     });
     if (!response.ok) throw new Error(`${path} failed with HTTP ${response.status}`);
+    return await response.json();
   }
 }
 
@@ -334,12 +359,67 @@ export interface AgentCycleOptions {
   client?: CentralAgentClient;
   state?: CommandExecutionState;
   now?: Date;
+  localBackendFetchImpl?: typeof fetch;
+}
+
+export interface LocalEventExportResponse {
+  events: EventEnvelope[];
+  cursor: {
+    after_sequence: number;
+    next_after_sequence: number | null;
+    count: number;
+    limit: number;
+  };
+}
+
+export interface EventUploadCycleResult {
+  attempted: number;
+  uploaded: number;
+  next_after_sequence: number | null;
 }
 
 export interface AgentCycleResult {
   heartbeat: HeartbeatPayload;
+  events: EventUploadCycleResult;
   commands_seen: number;
   results: CommandResult[];
+}
+
+export function readUploadedSequence(path: string | undefined): number {
+  if (!path || !existsSync(path)) return 0;
+  const value = Number(readFileSync(path, 'utf8').trim());
+  return Number.isFinite(value) && value >= 0 ? Math.trunc(value) : 0;
+}
+
+export function writeUploadedSequence(path: string | undefined, sequence: number): void {
+  if (!path) return;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${Math.max(0, Math.trunc(sequence))}\n`, 'utf8');
+}
+
+export async function fetchLocalEvents(config: KioskAgentConfig, afterSequence: number, fetchImpl: typeof fetch = fetch): Promise<LocalEventExportResponse> {
+  if (!config.local_backend_base_url) return { events: [], cursor: { after_sequence: afterSequence, next_after_sequence: null, count: 0, limit: config.event_upload_batch_size } };
+  const url = new URL('/admin/api/events/export', config.local_backend_base_url);
+  url.searchParams.set('after_sequence', String(afterSequence));
+  url.searchParams.set('limit', String(config.event_upload_batch_size));
+  const response = await fetchImpl(url, {
+    headers: config.local_backend_auth_token ? { authorization: `Bearer ${config.local_backend_auth_token}` } : {},
+  });
+  if (!response.ok) throw new Error(`local event export failed with HTTP ${response.status}`);
+  return await response.json() as LocalEventExportResponse;
+}
+
+export async function uploadLocalEvents(config: KioskAgentConfig, client: CentralAgentClient, fetchImpl?: typeof fetch): Promise<EventUploadCycleResult> {
+  if (!config.local_backend_base_url) return { attempted: 0, uploaded: 0, next_after_sequence: null };
+  const afterSequence = readUploadedSequence(config.last_uploaded_sequence_path);
+  const exported = await fetchLocalEvents(config, afterSequence, fetchImpl ?? fetch);
+  if (exported.events.length === 0) return { attempted: 0, uploaded: 0, next_after_sequence: null };
+  const result = await client.submitEvents(config.kiosk_id, exported.events);
+  const accepted = result.events.filter((event) => event.status === 'inserted' || event.status === 'duplicate').length;
+  if (accepted !== exported.events.length) throw new Error('central event upload returned incomplete acknowledgement');
+  const nextSequence = exported.cursor.next_after_sequence ?? exported.events.at(-1)?.local_sequence ?? afterSequence;
+  writeUploadedSequence(config.last_uploaded_sequence_path, nextSequence);
+  return { attempted: exported.events.length, uploaded: accepted, next_after_sequence: nextSequence };
 }
 
 export async function runKioskAgentCycle(options: AgentCycleOptions): Promise<AgentCycleResult> {
@@ -348,6 +428,7 @@ export async function runKioskAgentCycle(options: AgentCycleOptions): Promise<Ag
   const state = options.state ?? createCommandExecutionState();
   const heartbeat = buildHeartbeatPayload(config, options.now);
   await client.submitHeartbeat(heartbeat);
+  const eventUpload = await uploadLocalEvents(config, client, options.localBackendFetchImpl);
   const commands = await client.pollCommands(config.kiosk_id, config.command_poll_limit);
   const results: CommandResult[] = [];
 
@@ -368,7 +449,7 @@ export async function runKioskAgentCycle(options: AgentCycleOptions): Promise<Ag
     }
   }
 
-  return { heartbeat, commands_seen: commands.length, results };
+  return { heartbeat, events: eventUpload, commands_seen: commands.length, results };
 }
 
 export interface AgentDaemonOptions {
