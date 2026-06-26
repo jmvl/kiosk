@@ -89,6 +89,30 @@ describe('@retail-kiosk/kiosk-player package', () => {
     }
   });
 
+  it('keeps customer-facing Dr. Oetker shell states bilingual and avoids raw operator labels', () => {
+    for (const expectedCopy of [
+      'Départ jeton',
+      'Jetonstart',
+      'Roue pizza',
+      'Pizzawiel',
+      'Wedstrijdvraag',
+      'Nu bent u aan zet',
+      'Kiosque indisponible',
+      'Kiosk niet beschikbaar',
+      'Réessayer',
+      'Opnieuw proberen',
+      'Veuillez demander de l’aide au personnel.',
+      'Vraag een medewerker om hulp.',
+    ]) {
+      assert.ok(appSource.includes(expectedCopy), `missing customer copy ${expectedCopy}`);
+    }
+    assert.doesNotMatch(appSource, />Token start</);
+    assert.doesNotMatch(appSource, />Runtime error</);
+    assert.doesNotMatch(appSource, />Local runtime unavailable</);
+    assert.doesNotMatch(appSource, />Retry</);
+    assert.doesNotMatch(appSource, /<p>\{error\}<\/p>/);
+  });
+
   it('renders a complete labelled Dr. Oetker demo wheel', () => {
     assert.match(fixtureSource, /segment-label/);
     assert.match(fixtureSource, /-0,50 € Ristorante/);

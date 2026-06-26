@@ -31,8 +31,8 @@
     },
     {
       "path": "module/index.html",
-      "size_bytes": 3596,
-      "sha256": "93264300faa7d1d33718c1206ff7cddadae2602d88ce924bddb337218aac989d",
+      "size_bytes": 3308,
+      "sha256": "564ee24ad41781326880ad264a97794fefbeca6e2b9add14e818029f12fce15e",
       "media_type": "text/html",
       "role": "entrypoint"
     },

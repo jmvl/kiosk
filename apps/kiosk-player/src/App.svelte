@@ -304,8 +304,8 @@
   {#if screen === 'idle'}
     <section class="stage attract pizza-attract">
       <div class="coin-orbit pizza-orbit" aria-hidden="true"></div>
-      <p class="eyebrow">Token start</p>
-      <h2>Pizza Wheel</h2>
+      <p class="eyebrow">{selectedLanguage === 'fr-BE' ? 'Départ jeton' : 'Jetonstart'}</p>
+      <h2>{selectedLanguage === 'fr-BE' ? 'Roue pizza' : 'Pizzawiel'}</h2>
       <p>{selectedLanguage === 'fr-BE' ? 'Insérez le jeton reçu en caisse pour participer.' : 'Steek de jeton van de kassa in om deel te nemen.'}</p>
       <button class="primary temp-start-button" type="button" disabled={busy} on:click={startTempGameSession}>{selectedLanguage === 'fr-BE' ? 'Commencer le jeu' : 'Start het spel'}</button>
       {#if hqDebugControlsEnabled}<button class="primary" type="button" on:click={startFakeSession}>HQ debug: inject fake token</button>{/if}
@@ -316,7 +316,7 @@
     {#if !wheelPhase}
       <section class="stage quiz-stage pizza-game">
         <div class="quiz-panel">
-          <p class="eyebrow">Question concours</p>
+          <p class="eyebrow">{language === 'fr-BE' ? 'Question concours' : 'Wedstrijdvraag'}</p>
           <h2>{localized(drOetkerManifest.quiz.question, language)}</h2>
           <div class="language-switch" aria-label="FR NL language switch">
             <button class:active-language={language === 'fr-BE'} disabled={languageLocked || busy} type="button" on:click={() => selectLanguage('fr-BE')}>FR</button>
@@ -339,7 +339,7 @@
     {:else}
       <section class="stage wheel-stage pizza-wheel-stage">
         <div class="wheel-hero-copy">
-          <p class="eyebrow">À vous de jouer</p>
+          <p class="eyebrow">{language === 'fr-BE' ? 'À vous de jouer' : 'Nu bent u aan zet'}</p>
           <h2>{language === 'fr-BE' ? 'Faites tourner la roue' : 'Draai aan het wiel'}</h2>
           <p>{language === 'fr-BE' ? 'La question est validée. Lancez ou faites glisser la roue pour découvrir votre ticket.' : 'De vraag is goed. Start of sleep aan het wiel en ontdek uw ticket.'}</p>
           <button class="primary spin-button hero-spin" type="button" disabled={!canSpin || busy || wheelSpinning} on:click={startSpin}>
@@ -383,8 +383,8 @@
 
   {#if screen === 'maintenance'}
     <section class="stage maintenance-card">
-      <p class="eyebrow">Maintenance</p>
-      <h2>Kiosk unavailable</h2>
+      <p class="eyebrow">{language === 'fr-BE' ? 'Assistance' : 'Hulp nodig'}</p>
+      <h2>{language === 'fr-BE' ? 'Kiosque indisponible' : 'Kiosk niet beschikbaar'}</h2>
       <p>{language === 'fr-BE' ? 'Veuillez demander de l’aide au personnel.' : 'Vraag een medewerker om hulp.'}</p>
       {#if hqDebugControlsEnabled}<button class="primary" type="button" on:click={exitMaintenance}>HQ debug: exit maintenance</button>{/if}
     </section>
@@ -392,10 +392,11 @@
 
   {#if screen === 'error'}
     <section class="stage error-card">
-      <p class="eyebrow">Runtime error</p>
-      <h2>Local runtime unavailable</h2>
-      <p>{error}</p>
-      <button class="primary" type="button" on:click={() => window.location.reload()}>Retry</button>
+      <p class="eyebrow">{language === 'fr-BE' ? 'Assistance' : 'Hulp nodig'}</p>
+      <h2>{language === 'fr-BE' ? 'Kiosque indisponible' : 'Kiosk niet beschikbaar'}</h2>
+      <p>{language === 'fr-BE' ? 'Veuillez demander de l’aide au personnel.' : 'Vraag een medewerker om hulp.'}</p>
+      {#if hqDebugControlsEnabled && error}<p class="debug-detail">HQ debug: {error}</p>{/if}
+      <button class="primary" type="button" on:click={() => window.location.reload()}>{language === 'fr-BE' ? 'Réessayer' : 'Opnieuw proberen'}</button>
     </section>
   {/if}
 
